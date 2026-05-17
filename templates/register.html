@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইফতেখার হোস্টিং বট সার্ভার | রেজিস্ট্রেশন</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 50%, #0a0a2a 100%);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .cyber-grid {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 77, 77, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(77, 77, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .glass-card {
+            background: rgba(10, 10, 20, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid rgba(77, 77, 255, 0.3);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(77, 77, 255, 0.2);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .bot-icon {
+            font-size: 70px;
+            animation: spin 4s infinite linear;
+            filter: drop-shadow(0 0 20px rgba(77, 77, 255, 0.5));
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 32px;
+            margin-top: 15px;
+            letter-spacing: 2px;
+        }
+
+        .red-text { color: #ff4d4d; text-shadow: 0 0 10px rgba(255, 77, 77, 0.5); }
+        .blue-text { color: #4d4dff; text-shadow: 0 0 10px rgba(77, 77, 255, 0.5); }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4d4dff;
+            font-size: 18px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(77, 77, 255, 0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4d4dff;
+            box-shadow: 0 0 15px rgba(77, 77, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(90deg, #4d4dff, #ff4d4d);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Orbitron', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-register:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(77, 77, 255, 0.5);
+        }
+
+        .toggle-link {
+            text-align: center;
+            margin-top: 25px;
+            color: #aaa;
+        }
+
+        .toggle-link a {
+            color: #4d4dff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .alert {
+            background: rgba(77, 77, 255, 0.2);
+            border-left: 4px solid #4d4dff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+    
+    <div class="container">
+        <div class="glass-card">
+            <div class="logo-section">
+                <div class="bot-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <h1>
+                    <span class="red-text">ইফতেখার</span>
+                    <span class="blue-text">হোস্টিং</span>
+                </h1>
+                <div class="subtitle">ক্রিয়েট অ্যাকাউন্ট</div>
+            </div>
+
+            <form id="registerForm">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="regUsername" placeholder="ইউজারনেম" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="regEmail" placeholder="ইমেইল" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="regPassword" placeholder="পাসওয়ার্ড" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-check-circle"></i>
+                    <input type="password" id="confirmPassword" placeholder="পাসওয়ার্ড নিশ্চিত করুন" required>
+                </div>
+                <button type="submit" class="btn-register">
+                    <i class="fas fa-user-plus"></i> রেজিস্ট্রেশন করুন
+                </button>
+            </form>
+
+            <div class="toggle-link">
+                ইতিমধ্যে অ্যাকাউন্ট আছে? <a href="/">লগইন করুন</a>
+            </div>
+            <div id="registerMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+
+            if(password !== confirm) {
+                showMessage('পাসওয়ার্ড মিলছে না!', 'error');
+                return;
+            }
+
+            if(password.length < 6) {
+                showMessage('পাসওয়ার্ড কমপক্ষে 6 অক্ষরের হতে হবে!', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, email, password})
+                });
+                const data = await res.json();
+
+                if(data.success) {
+                    showMessage(data.message, 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch(err) {
+                showMessage('সার্ভারে সংযোগ করতে ব্যর্থ!', 'error');
+            }
+        });
+
+        function showMessage(msg, type) {
+            const messageDiv = document.getElementById('registerMessage');
+            messageDiv.innerHTML = `<div class="alert" style="border-left-color: ${type === 'success' ? '#00ff00' : '#ff4d4d'}">${msg}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইফতেখার হোস্টিং বোর্ড | ড্যাশবোর্ড</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0a0515 50%, #0a0a2a 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .bg-animation { position: fixed; width: 100%; height: 100%; z-index: 0; overflow: hidden; }
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: linear-gradient(135deg, #ff4d4d, #4d4dff);
+            border-radius: 50%;
+            animation: floatParticle 10s infinite linear;
+        }
+        @keyframes floatParticle {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+        }
+        .container { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .welcome-section {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(15, 20, 45, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 77, 77, 0.3);
+        }
+        .welcome-section h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 38px;
+            background: linear-gradient(135deg, #ff4d4d, #4d4dff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .user-badge {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 20px;
+            background: rgba(255, 77, 77, 0.2);
+            border-radius: 50px;
+            font-size: 14px;
+        }
+        .control-section {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .ctrl-btn {
+            padding: 12px 35px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Orbitron', monospace;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-start { background: linear-gradient(135deg, #00cc44, #009933); }
+        .btn-stop { background: linear-gradient(135deg, #ff4444, #cc0000); }
+        .btn-restart { background: linear-gradient(135deg, #ffaa00, #ff6600); }
+        .ctrl-btn:hover { transform: scale(1.05); }
+        .server-status {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50px;
+        }
+        .status-led { width: 12px; height: 12px; border-radius: 50%; }
+        .status-led.online { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        .status-led.offline { background: #ff0000; box-shadow: 0 0 10px #ff0000; }
+        .console-section {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            margin-bottom: 30px;
+        }
+        .console-header {
+            background: linear-gradient(135deg, rgba(255, 77, 77, 0.2), rgba(77, 77, 255, 0.2));
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 77, 77, 0.3);
+            flex-wrap: wrap;
+        }
+        .console-title { font-family: 'Orbitron', monospace; font-size: 18px; }
+        .console-body {
+            height: 200px;
+            overflow-y: auto;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .log-entry {
+            padding: 6px 12px;
+            margin-bottom: 6px;
+            border-left: 3px solid;
+            animation: slideIn 0.3s ease;
+        }
+        .log-info { border-left-color: #4d4dff; color: #aaa; }
+        .log-success { border-left-color: #00ff00; color: #00ff00; }
+        .log-warning { border-left-color: #ffaa00; color: #ffaa00; }
+        .log-error { border-left-color: #ff4444; color: #ff4444; }
+        .log-time { color: #888; margin-right: 15px; font-size: 11px; }
+        .file-manager {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(77, 77, 255, 0.3);
+            overflow: hidden;
+        }
+        .file-header {
+            background: linear-gradient(135deg, rgba(77, 77, 255, 0.2), rgba(255, 77, 77, 0.2));
+            padding: 15px 25px;
+            border-bottom: 1px solid rgba(77, 77, 255, 0.3);
+        }
+        .upload-area {
+            border: 2px dashed rgba(255, 77, 77, 0.5);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.02);
+        }
+        .upload-area:hover { border-color: #ff4d4d; background: rgba(255, 77, 77, 0.1); }
+        .upload-area.drag-over { border-color: #4d4dff; background: rgba(77, 77, 255, 0.2); }
+        .file-tree { padding: 20px; max-height: 400px; overflow-y: auto; }
+        .file-item {
+            padding: 12px 15px;
+            margin: 8px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .file-item:hover { background: rgba(255,255,255,0.1); }
+        .process-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ff4d4d;
+        }
+        .process-card.running { border-left-color: #00ff00; background: rgba(0,255,0,0.05); }
+        .process-status-running { color: #00ff00; }
+        .process-status-stopped { color: #ff4444; }
+        .log-viewer {
+            background: #0a0a1a;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 77, 77, 0.2);
+            border: 1px solid rgba(255, 77, 77, 0.5);
+            padding: 10px 20px;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            z-index: 100;
+            font-family: 'Orbitron', monospace;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #00cc44;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            animation: slideInRight 0.3s ease;
+            z-index: 1000;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #ff4d4d, #4d4dff); border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="bg-animation" id="bgAnimation"></div>
+    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> লগআউট</button>
+
+    <div class="container">
+        <div class="welcome-section">
+            <h1><i class="fas fa-server"></i> ইফতেখার হোস্টিং বোর্ড</h1>
+            <div style="font-size: 18px; margin-top: 10px;">তোমাদেরকে স্বাগতম! 🚀</div>
+            <div class="user-badge"><i class="fas fa-user"></i> <span id="username">ভিজিটর</span></div>
+        </div>
+
+        <div class="control-section">
+            <button class="ctrl-btn btn-start" id="startBtn"><i class="fas fa-play"></i> স্টার্ট</button>
+            <button class="ctrl-btn btn-stop" id="stopBtn"><i class="fas fa-stop"></i> স্টপ</button>
+            <button class="ctrl-btn btn-restart" id="restartBtn"><i class="fas fa-sync-alt"></i> রিস্টার্ট</button>
+        </div>
+
+        <div class="server-status">
+            <div class="status-indicator">
+                <div class="status-led online" id="statusLed"></div>
+                <span id="serverStatusText">সার্ভার অনলাইন</span>
+            </div>
+            <div class="status-indicator"><i class="fas fa-microchip"></i> CPU: <span id="cpuLoad">23</span>%</div>
+            <div class="status-indicator"><i class="fas fa-memory"></i> RAM: <span id="ramLoad">45</span>%</div>
+        </div>
+
+        <div class="console-section">
+            <div class="console-header">
+                <div class="console-title"><i class="fas fa-terminal"></i> লাইভ কনসোল লগ</div>
+                <div><button onclick="clearConsole()" style="background:rgba(255,255,255,0.1); border:none; padding:5px 12px; border-radius:5px; color:white; cursor:pointer;"><i class="fas fa-trash"></i> ক্লিয়ার</button></div>
+            </div>
+            <div class="console-body" id="consoleBody">
+                <div class="log-entry log-success"><span class="log-time">[সিস্টেম]</span> ইফতেখার হোস্টিং বোর্ড শুরু হয়েছে...</div>
+                <div class="log-entry log-info"><span class="log-time">[সিস্টেম]</span> ব্যাকএন্ড সংযোগ সক্রিয়...</div>
+            </div>
+        </div>
+
+        <div class="file-manager">
+            <div class="file-header">
+                <h3><i class="fas fa-folder-tree"></i> ফাইল ম্যানেজার</h3>
+                <p style="font-size: 12px; color: #aaa;">ZIP ফাইল আপলোড করুন | পাইথন স্ক্রিপ্ট স্টার্ট/স্টপ/রিস্টার্ট করুন</p>
+            </div>
+            
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; margin-bottom: 10px;"></i>
+                <p><strong>ক্লিক করুন বা ড্র্যাগ করুন</strong></p>
+                <p style="font-size: 12px;">ZIP ফাইল আপলোড সাপোর্ট (ফোল্ডার স্ট্রাকচার সংরক্ষিত থাকবে)</p>
+                <input type="file" id="fileInput" accept=".zip" style="display: none;">
+            </div>
+
+            <div class="file-tree" id="fileTree">
+                <div style="text-align: center; color: #aaa; padding: 20px;">
+                    <i class="fas fa-inbox"></i> এখনো কোন ফাইল আপলোড হয়নি
+                </div>
+            </div>
+        </div>
+
+        <h3 style="margin: 20px 0 15px;"><i class="fas fa-microchip"></i> চলমান প্রসেস সমূহ</h3>
+        <div id="processesList">
+            <div style="text-align: center; padding: 40px; color: #aaa;">
+                <i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentUser = null;
+        let cpuInterval, ramInterval;
+
+        function addLog(message, type = 'info') {
+            const consoleBody = document.getElementById('consoleBody');
+            const logDiv = document.createElement('div');
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('bn-BD');
+            logDiv.className = `log-entry log-${type}`;
+            logDiv.innerHTML = `<span class="log-time">[${timeStr}]</span> ${message}`;
+            consoleBody.appendChild(logDiv);
+            logDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if(consoleBody.children.length > 300) consoleBody.removeChild(consoleBody.children[0]);
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleBody').innerHTML = '';
+            addLog('কনসোল ক্লিয়ার করা হয়েছে', 'warning');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.background = type === 'success' ? '#00cc44' : type === 'error' ? '#ff4444' : '#4d4dff';
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        socket.on('script_started', (data) => {
+            addLog(`✅ "${data.script_name}" স্ক্রিপ্ট স্টার্ট হয়েছে (PID: ${data.pid})`, 'success');
+            showToast(`"${data.script_name}" স্টার্ট হয়েছে`, 'success');
+            loadProcesses();
+        });
+
+        socket.on('script_stopped', (data) => {
+            addLog(`🛑 স্ক্রিপ্ট বন্ধ করা হয়েছে`, 'warning');
+            showToast(`স্ক্রিপ্ট বন্ধ করা হয়েছে`, 'info');
+            loadProcesses();
+        });
+
+        socket.on('script_restarted', (data) => {
+            addLog(`🔄 স্ক্রিপ্ট রিস্টার্ট হয়েছে`, 'info');
+            showToast(`স্ক্রিপ্ট রিস্টার্ট হয়েছে`, 'info');
+            loadProcesses();
+        });
+
+        socket.on('file_uploaded', (data) => {
+            addLog(`📦 ফাইল আপলোড সফল! ${data.total_files} টি ফাইল`, 'success');
+        });
+
+        async function loadUser() {
+            const userData = localStorage.getItem('currentUser');
+            if(userData) {
+                currentUser = JSON.parse(userData);
+                document.getElementById('username').textContent = currentUser.username;
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: currentUser.username, password: currentUser.password})
+                });
+                const data = await res.json();
+                if(data.success) {
+                    addLog(`${currentUser.username} লগইন করেছেন`, 'success');
+                    loadUploadedFiles();
+                    loadProcesses();
+                } else {
+                    window.location.href = '/';
+                }
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        async function loadUploadedFiles() {
+            const res = await fetch('/api/get-uploaded-files');
+            const data = await res.json();
+            if(data.success && data.files.length > 0) {
+                displayFiles(data.files);
+            }
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            addLog(`⏳ আপলোড শুরু: ${file.name}`, 'info');
+            
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                displayFiles(data.python_files || []);
+                showToast(data.message, 'success');
+                addLog(data.message, 'success');
+            } else {
+                showToast(data.message, 'error');
+                addLog(data.message, 'error');
+            }
+        }
+
+        function displayFiles(files) {
+            const container = document.getElementById('fileTree');
+            if(!files || files.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #aaa; padding: 20px;"><i class="fas fa-inbox"></i> কোন পাইথন ফাইল পাওয়া যায়নি</div>';
+                return;
+            }
+            
+            container.innerHTML = files.map(file => `
+                <div class="file-item">
+                    <div>
+                        <i class="fab fa-python" style="color:#ffd43b;"></i>
+                        <strong>${file.name}</strong>
+                        <small style="color:#aaa; margin-left:10px;">${file.path}</small>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="ctrl-btn" onclick="startScript('${file.full_path}', '${file.name}')" style="padding:5px 15px; font-size:12px; background:#00cc44;">
+                            <i class="fas fa-play"></i> স্টার্ট
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function startScript(scriptPath, scriptName) {
+            addLog(`🚀 "${scriptName}" স্টার্ট হচ্ছে...`, 'info');
+            
+            const res = await fetch('/api/start-script', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({script_path: scriptPath, script_name: scriptName})
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                addLog(data.message, 'success');
+                loadProcesses();
+            } else {
+                addLog(data.message, 'error');
+            }
+        }
+
+        async function stopScript(processId) {
+            const res = await fetch('/api/stop-script', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({process_id: processId})
+            });
+            const data = await res.json();
+            addLog(data.message, data.success ? 'warning' : 'error');
+            if(data.success) loadProcesses();
+        }
+
+        async function restartScript(processId) {
+            const res = await fetch('/api/restart-script', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({process_id: processId})
+            });
+            const data = await res.json();
+            addLog(data.message, data.success ? 'info' : 'error');
+            if(data.success) loadProcesses();
+        }
+
+        async function loadProcesses() {
+            const res = await fetch('/api/my-scripts');
+            const data = await res.json();
+            if(data.success && data.processes) {
+                displayProcesses(data.processes);
+            }
+        }
+
+        function displayProcesses(processes) {
+            const container = document.getElementById('processesList');
+            if(!processes || processes.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;"><i class="fas fa-inbox"></i> কোন প্রসেস নেই</div>';
+                return;
+            }
+            
+            container.innerHTML = processes.map(proc => `
+                <div class="process-card ${proc.status === 'running' ? 'running' : ''}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                        <div>
+                            <strong><i class="fas fa-cogs"></i> ${proc.script_name}</strong><br>
+                            <small>PID: ${proc.pid || 'N/A'} | স্টার্ট: ${new Date(proc.start_time).toLocaleString()}</small>
+                        </div>
+                        <div>
+                            <span class="process-status-${proc.status}">
+                                ${proc.status === 'running' ? '● চলছে' : '○ বন্ধ'}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        ${proc.status === 'running' ? `
+                            <button onclick="stopScript('${proc.process_id}')" style="background:#ff4444; padding:8px 20px; border:none; border-radius:8px; color:white; cursor:pointer;">
+                                <i class="fas fa-stop"></i> স্টপ
+                            </button>
+                            <button onclick="restartScript('${proc.process_id}')" style="background:#ffaa00; padding:8px 20px; border:none; border-radius:8px; color:white; cursor:pointer;">
+                                <i class="fas fa-sync-alt"></i> রিস্টার্ট
+                            </button>
+                        ` : `
+                            <button onclick="startScript('${proc.script_path}', '${proc.script_name}')" style="background:#00cc44; padding:8px 20px; border:none; border-radius:8px; color:white; cursor:pointer;">
+                                <i class="fas fa-play"></i> স্টার্ট
+                            </button>
+                        `}
+                        <button onclick="viewLog('${proc.process_id}')" style="background:#4d4dff; padding:8px 20px; border:none; border-radius:8px; color:white; cursor:pointer;">
+                            <i class="fas fa-terminal"></i> লগ দেখুন
+                        </button>
+                    </div>
+                    <div id="log-${proc.process_id}" class="log-viewer" style="display:none;"></div>
+                </div>
+            `).join('');
+        }
+
+        async function viewLog(processId) {
+            const logDiv = document.getElementById(`log-${processId}`);
+            if(logDiv.style.display === 'none') {
+                logDiv.innerHTML = '<div style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>';
+                logDiv.style.display = 'block';
+                
+                const res = await fetch(`/api/script-log/${processId}?lines=100`);
+                const data = await res.json();
+                
+                if(data.success) {
+                    logDiv.innerHTML = `<pre style="margin:0; white-space:pre-wrap; font-family:monospace;">${data.log || 'লগ খালি'}</pre>`;
+                } else {
+                    logDiv.innerHTML = '<div style="color:#ff4444;">লগ লোড করতে ব্যর্থ</div>';
+                }
+            } else {
+                logDiv.style.display = 'none';
+            }
+        }
+
+        function startServer() {
+            addLog('সার্ভার রানিং...', 'info');
+        }
+
+        function stopServer() {
+            addLog('সার্ভার স্টপ...', 'info');
+        }
+
+        function restartServer() {
+            addLog('সার্ভার রিস্টার্ট...', 'info');
+        }
+
+        function startMonitoring() {
+            cpuInterval = setInterval(() => {
+                document.getElementById('cpuLoad').textContent = Math.floor(Math.random() * 30 + 10);
+            }, 3000);
+            ramInterval = setInterval(() => {
+                document.getElementById('ramLoad').textContent = Math.floor(Math.random() * 40 + 20);
+            }, 3000);
+        }
+
+        function logout() {
+            fetch('/api/logout', {method: 'POST'});
+            localStorage.removeItem('currentUser');
+            window.location.href = '/';
+        }
+
+        function createParticles() {
+            const bg = document.getElementById('bgAnimation');
+            for(let i = 0; i < 80; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDelay = Math.random() * 10 + 's';
+                p.style.animationDuration = Math.random() * 15 + 5 + 's';
+                bg.appendChild(p);
+            }
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startServer);
+        document.getElementById('stopBtn').addEventListener('click', stopServer);
+        document.getElementById('restartBtn').addEventListener('click', restartServer);
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            if(e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if(e.target.files[0]) uploadFile(e.target.files[0]);
+        });
+
+        loadUser();
+        createParticles();
+        startMonitoring();
+        setInterval(loadProcesses, 5000);
+    </script>
+</body>
+</html>
