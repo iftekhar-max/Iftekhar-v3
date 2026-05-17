@@ -1,263 +1,120 @@
-from flask import Flask, render_template, request, jsonify, session
-from flask_socketio import SocketIO
 import os
 import zipfile
-import json
-import uuid
 import shutil
-from datetime import datetime
-from werkzeug.utils import secure_filename
+import psutil
+import time
+from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, emit
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'iftikhar-hosting-secret-key'
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
-
+app = Flask(__name__, template_folder='.') # html ফাইল একই ফোল্ডারে রাখার জন্য
+app.config['SECRET_KEY'] = 'iftekhar_secret_123'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# ফোল্ডার তৈরি
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# যে ফোল্ডারে ফাইল এক্সট্র্যাক্ট হবে
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'user_files')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-USERS_FILE = 'users.json'
-
-def load_users():
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, 'r') as f:
-            return json.load(f)
-    return {'demo': {'password': 'demo123', 'user_id': 'user_001', 'name': 'Demo User'}}
-
-def save_users(users):
-    with open(USERS_FILE, 'w') as f:
-        json.dump(users, f, indent=2)
-
-users = load_users()
-
-def get_current_user():
-    return session.get('user_id')
+SERVER_STATUS = {"running": True}
 
 @app.route('/')
 def index():
-    return render_template('index.html')
-
-@app.route('/register')
-def register_page():
-    return render_template('register.html')
-
-@app.route('/dashboard')
-def dashboard():
     return render_template('dashboard.html')
 
-@app.route('/api/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    
-    if username in users and users[username]['password'] == password:
-        session['user_id'] = users[username]['user_id']
-        session['username'] = username
-        return jsonify({'success': True, 'username': username})
-    return jsonify({'success': False, 'message': 'ইউজারনেম বা পাসওয়ার্ড ভুল'})
-
-@app.route('/api/register', methods=['POST'])
-def register():
-    data = request.get_json()
-    username = data.get('username')
-    email = data.get('email')
-    password = data.get('password')
-    
-    if len(password) < 6:
-        return jsonify({'success': False, 'message': 'পাসওয়ার্ড কমপক্ষে 6 অক্ষরের হতে হবে'})
-    
-    if username in users:
-        return jsonify({'success': False, 'message': 'ইউজারনেম ইতিমধ্যে নেওয়া হয়েছে'})
-    
-    users[username] = {
-        'password': password,
-        'email': email,
-        'user_id': str(uuid.uuid4()),
-        'name': username,
-        'created_at': datetime.now().isoformat()
-    }
-    save_users(users)
-    return jsonify({'success': True, 'message': 'রেজিস্ট্রেশন সফল!'})
-
-@app.route('/api/logout', methods=['POST'])
-def logout():
-    session.clear()
-    return jsonify({'success': True})
-
+# ZIP আপলোড ও এক্সট্র্যাক্ট API
 @app.route('/api/upload', methods=['POST'])
-def upload_file():
-    print("=" * 50)
-    print("📤 UPLOAD CALLED")
-    
-    user_id = get_current_user()
-    if not user_id:
-        return jsonify({'success': False, 'message': 'লগইন করুন'})
-    
+def upload_zip():
     if 'file' not in request.files:
-        return jsonify({'success': False, 'message': 'কোন ফাইল নেই'})
+        return jsonify({"error": "No file uploaded"}), 400
     
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'success': False, 'message': 'ফাইল সিলেক্ট করুন'})
+        return jsonify({"error": "No selected file"}), 400
+
+    if file and file.filename.endswith('.zip'):
+        zip_path = os.path.join(UPLOAD_FOLDER, file.filename)
+        file.save(zip_path)
+        
+        try:
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(UPLOAD_FOLDER)
+            os.remove(zip_path)
+            send_log(f"ZIP ফাইল '{file.filename}' সফলভাবে এক্সট্র্যাক্ট করা হয়েছে।", "success")
+            return jsonify({"success": True})
+        except Exception as e:
+            send_log(f"ZIP এক্সট্র্যাক্ট ব্যর্থ: {str(e)}", "error")
+            return jsonify({"error": str(e)}), 500
+            
+    return jsonify({"error": "Only ZIP files allowed"}), 400
+
+# ফাইল সেভ ও ডিলিট API
+@app.route('/api/files', methods=['POST', 'DELETE'])
+def file_manager_api():
+    if request.method == 'DELETE':
+        file_path = request.args.get('path')
+        full_path = os.path.join(UPLOAD_FOLDER, file_path)
+        if os.path.exists(full_path):
+            os.remove(full_path)
+            send_log(f"'{file_path}' ফাইলটি ডিলিট করা হয়েছে।", "error")
+            return jsonify({"success": True})
+        return jsonify({"error": "File not found"}), 404
+
+    if request.method == 'POST':
+        data = request.json
+        file_path = data.get('path')
+        content = data.get('content')
+        full_path = os.path.join(UPLOAD_FOLDER, file_path)
+        
+        try:
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            send_log(f"'{file_path}' ফাইলের কন্টেন্ট সেভ করা হয়েছে।", "success")
+            return jsonify({"success": True})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+# সকেট কন্ট্রোল
+@socketio.on('connect')
+def handle_connect():
+    emit_status()
+
+@socketio.on('server_control')
+def handle_control(data):
+    action = data.get('action')
+    if action == 'start':
+        SERVER_STATUS["running"] = True
+        send_log("🚀 সার্ভার স্টার্ট করা হয়েছে", "success")
+    elif action == 'stop':
+        SERVER_STATUS["running"] = False
+        send_log("🛑 সার্ভার স্টপ করা হয়েছে", "error")
+    elif action == 'restart':
+        SERVER_STATUS["running"] = False
+        send_log("🔄 সার্ভার রিস্টার্ট শুরু...", "warning")
+        time.sleep(1.5)
+        SERVER_STATUS["running"] = True
+        send_log("✅ রিস্টার্ট সম্পূর্ণ ও সার্ভার অনলাইন!", "success")
+    emit_status()
+
+def emit_status():
+    cpu = psutil.cpu_percent() if SERVER_STATUS["running"] else 0
+    ram = psutil.virtual_memory().percent if SERVER_STATUS["running"] else 0
+    status_text = "সার্ভার অনলাইন" if SERVER_STATUS["running"] else "সার্ভার অফলাইন"
     
-    if not file.filename.endswith('.zip'):
-        return jsonify({'success': False, 'message': 'শুধুমাত্র ZIP ফাইল সাপোর্ট করে'})
-    
-    try:
-        user_folder = os.path.join(app.config['UPLOAD_FOLDER'], user_id)
-        os.makedirs(user_folder, exist_ok=True)
-        
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = secure_filename(f"{timestamp}_{file.filename}")
-        file_path = os.path.join(user_folder, filename)
-        file.save(file_path)
-        print(f"Saved: {file_path}")
-        
-        extract_folder = os.path.join(user_folder, filename.replace('.zip', ''))
-        if os.path.exists(extract_folder):
-            shutil.rmtree(extract_folder)
-        
-        with zipfile.ZipFile(file_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_folder)
-        print(f"Extracted to: {extract_folder}")
-        
-        # ফাইল ট্রি তৈরি
-        file_tree = []
-        for item in os.listdir(extract_folder):
-            item_path = os.path.join(extract_folder, item)
-            if os.path.isdir(item_path):
-                file_tree.append({
-                    'type': 'folder',
-                    'name': item,
-                    'full_path': item_path,
-                    'children': []
-                })
-            else:
-                file_tree.append({
-                    'type': 'file',
-                    'name': item,
-                    'full_path': item_path,
-                    'size': os.path.getsize(item_path),
-                    'is_editable': item.endswith(('.py', '.txt', '.html', '.css', '.js'))
-                })
-        
-        print("Upload Success!")
-        return jsonify({
-            'success': True,
-            'message': 'ফাইল আপলোড সফল!',
-            'file_tree': file_tree
-        })
-        
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'success': False, 'message': str(e)})
-
-@app.route('/api/get-files', methods=['GET'])
-def get_files():
-    user_id = get_current_user()
-    if not user_id:
-        return jsonify({'success': False, 'message': 'লগইন করুন'})
-    
-    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], user_id)
-    file_tree = []
-    
-    if os.path.exists(user_folder):
-        folders = [f for f in os.listdir(user_folder) if os.path.isdir(os.path.join(user_folder, f))]
-        if folders:
-            latest = max(folders, key=lambda f: os.path.getmtime(os.path.join(user_folder, f)))
-            extract_path = os.path.join(user_folder, latest)
-            for item in os.listdir(extract_path):
-                item_path = os.path.join(extract_path, item)
-                if os.path.isdir(item_path):
-                    file_tree.append({'type': 'folder', 'name': item, 'full_path': item_path, 'children': []})
-                else:
-                    file_tree.append({
-                        'type': 'file', 'name': item, 'full_path': item_path,
-                        'size': os.path.getsize(item_path),
-                        'is_editable': item.endswith(('.py', '.txt', '.html', '.css', '.js'))
-                    })
-    
-    return jsonify({'success': True, 'file_tree': file_tree})
-
-@app.route('/api/get-file-content', methods=['GET'])
-def get_file_content():
-    file_path = request.args.get('path')
-    if not file_path or not os.path.exists(file_path):
-        return jsonify({'success': False, 'message': 'ফাইল নেই'})
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return jsonify({'success': True, 'content': f.read()})
-    except:
-        return jsonify({'success': False, 'message': 'ফাইল পড়া যাচ্ছে না'})
-
-@app.route('/api/save-file', methods=['POST'])
-def save_file():
-    data = request.get_json()
-    file_path = data.get('file_path')
-    content = data.get('content')
-    if not file_path or not os.path.exists(file_path):
-        return jsonify({'success': False, 'message': 'ফাইল নেই'})
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    return jsonify({'success': True, 'message': 'সেভ হয়েছে'})
-
-@app.route('/api/delete-file', methods=['POST'])
-def delete_file():
-    data = request.get_json()
-    file_path = data.get('file_path')
-    if not file_path or not os.path.exists(file_path):
-        return jsonify({'success': False, 'message': 'ফাইল নেই'})
-    if os.path.isdir(file_path):
-        shutil.rmtree(file_path)
-    else:
-        os.remove(file_path)
-    return jsonify({'success': True, 'message': 'ডিলিট হয়েছে'})
-
-@app.route('/api/set-main-file', methods=['POST'])
-def set_main_file():
-    data = request.get_json()
-    file_path = data.get('file_path')
-    session['main_file_path'] = file_path
-    session['main_file_name'] = os.path.basename(file_path)
-    return jsonify({'success': True, 'message': f'মেইন ফাইল সেট করা হয়েছে'})
-
-@app.route('/api/get-main-file', methods=['GET'])
-def get_main_file():
-    return jsonify({
-        'success': True,
-        'main_file_path': session.get('main_file_path'),
-        'main_file_name': session.get('main_file_name')
+    socketio.emit('status_update', {
+        "running": SERVER_STATUS["running"],
+        "status_text": status_text,
+        "cpu": cpu,
+        "ram": ram
     })
 
-@app.route('/api/start-script', methods=['POST'])
-def start_script():
-    return jsonify({'success': True, 'message': 'স্ক্রিপ্ট স্টার্ট হয়েছে'})
+def send_log(message, log_type="info"):
+    socketio.emit('new_log', {"message": message, "type": log_type})
 
-@app.route('/api/stop-script', methods=['POST'])
-def stop_script():
-    return jsonify({'success': True, 'message': 'স্ক্রিপ্ট স্টপ হয়েছে'})
-
-@app.route('/api/restart-script', methods=['POST'])
-def restart_script():
-    return jsonify({'success': True, 'message': 'স্ক্রিপ্ট রিস্টার্ট হয়েছে'})
-
-@app.route('/api/my-scripts', methods=['GET'])
-def my_scripts():
-    return jsonify({'success': True, 'processes': []})
-
-@app.route('/api/script-log/<process_id>', methods=['GET'])
-def script_log(process_id):
-    return jsonify({'success': True, 'log': 'লগ নেই', 'status': 'stopped'})
+def background_monitor():
+    while True:
+        if SERVER_STATUS["running"]:
+            emit_status()
+        socketio.sleep(3)
 
 if __name__ == '__main__':
-    print("""
-    ╔════════════════════════════════════════════════╗
-    ║   ইফতেখার হোস্টিং - সার্ভার স্টার্ট হয়েছে    ║
-    ║   http://localhost:5000                        ║
-    ║   demo / demo123                               ║
-    ╚════════════════════════════════════════════════╝
-    """)
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.start_background_task(background_monitor)
+    socketio.run(app, debug=True, port=5000)
