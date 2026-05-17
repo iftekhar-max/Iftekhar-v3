@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইফতেখার হোস্টিং বোর্ড | ফাইল ম্যানেজার</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0a0515 50%, #0a0a2a 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: linear-gradient(135deg, #ff4d4d, #4d4dff);
+            border-radius: 50%;
+            animation: floatParticle 10s infinite linear;
+        }
+
+        @keyframes floatParticle {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .welcome-section {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(15, 20, 45, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            animation: slideDown 0.8s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .welcome-section h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 38px;
+            background: linear-gradient(135deg, #ff4d4d, #4d4dff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .user-badge {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 20px;
+            background: rgba(255, 77, 77, 0.2);
+            border-radius: 50px;
+            font-size: 14px;
+        }
+
+        .control-section {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .ctrl-btn {
+            padding: 12px 35px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Orbitron', monospace;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-start { background: linear-gradient(135deg, #00cc44, #009933); }
+        .btn-stop { background: linear-gradient(135deg, #ff4444, #cc0000); }
+        .btn-restart { background: linear-gradient(135deg, #ffaa00, #ff6600); }
+
+        .ctrl-btn:hover { transform: scale(1.05); }
+
+        .server-status {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50px;
+        }
+
+        .status-led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-led.online { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        .status-led.offline { background: #ff0000; box-shadow: 0 0 10px #ff0000; }
+
+        .console-section {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .console-header {
+            background: linear-gradient(135deg, rgba(255, 77, 77, 0.2), rgba(77, 77, 255, 0.2));
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 77, 77, 0.3);
+            flex-wrap: wrap;
+        }
+
+        .console-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+        }
+
+        .console-body {
+            height: 200px;
+            overflow-y: auto;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .log-entry {
+            padding: 6px 12px;
+            margin-bottom: 6px;
+            border-left: 3px solid;
+            animation: slideIn 0.3s ease;
+        }
+
+        .log-info { border-left-color: #4d4dff; color: #aaa; }
+        .log-success { border-left-color: #00ff00; color: #00ff00; }
+        .log-warning { border-left-color: #ffaa00; color: #ffaa00; }
+        .log-error { border-left-color: #ff4444; color: #ff4444; }
+
+        .log-time { color: #888; margin-right: 15px; font-size: 11px; }
+
+        /* ফাইল ম্যানেজার */
+        .file-manager {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(77, 77, 255, 0.3);
+            overflow: hidden;
+        }
+
+        .file-header {
+            background: linear-gradient(135deg, rgba(77, 77, 255, 0.2), rgba(255, 77, 77, 0.2));
+            padding: 15px 25px;
+            border-bottom: 1px solid rgba(77, 77, 255, 0.3);
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 77, 77, 0.5);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .upload-area:hover {
+            border-color: #ff4d4d;
+            background: rgba(255, 77, 77, 0.1);
+        }
+
+        .upload-area.drag-over {
+            border-color: #4d4dff;
+            background: rgba(77, 77, 255, 0.2);
+        }
+
+        .file-tree {
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .folder-item, .file-item-tree {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+
+        .folder-toggle {
+            cursor: pointer;
+            user-select: none;
+            padding: 8px 10px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.03);
+            margin-bottom: 5px;
+        }
+
+        .folder-toggle:hover {
+            background: rgba(255, 77, 77, 0.2);
+        }
+
+        .folder-children {
+            display: none;
+            margin-left: 25px;
+        }
+
+        .folder-children.open {
+            display: block;
+        }
+
+        .file-item-tree {
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.03);
+            margin-bottom: 5px;
+            transition: all 0.3s;
+            border-left: 2px solid #ff4d4d;
+        }
+
+        .file-item-tree:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .file-item-tree.main-file {
+            border-left: 2px solid #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .file-content-area {
+            margin-top: 8px;
+        }
+
+        .file-content-textarea {
+            width: 100%;
+            background: #0a0a1a;
+            border: 1px solid rgba(255,77,77,0.3);
+            color: #fff;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 8px;
+            resize: vertical;
+            display: none;
+        }
+
+        .file-content-textarea.show {
+            display: block;
+        }
+
+        .file-info-tree {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .file-name-tree {
+            font-size: 13px;
+        }
+
+        .file-size {
+            font-size: 10px;
+            color: #aaa;
+            margin-left: 8px;
+        }
+
+        .file-actions-tree {
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-actions-tree button {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+
+        .edit-btn { background: rgba(77, 77, 255, 0.3); }
+        .edit-btn:hover { background: rgba(77, 77, 255, 0.7); }
+        
+        .save-btn { background: rgba(0, 204, 68, 0.3); }
+        .save-btn:hover { background: rgba(0, 204, 68, 0.7); }
+        
+        .set-main-btn { background: rgba(0, 255, 0, 0.2); }
+        .set-main-btn:hover { background: rgba(0, 255, 0, 0.5); }
+        
+        .delete-btn { background: rgba(255, 68, 68, 0.2); }
+        .delete-btn:hover { background: rgba(255, 68, 68, 0.5); }
+
+        .main-badge {
+            background: #00ff00;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 77, 77, 0.2);
+            border: 1px solid rgba(255, 77, 77, 0.5);
+            padding: 10px 20px;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            z-index: 100;
+            font-family: 'Orbitron', monospace;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #ff4d4d, #4d4dff); border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="bg-animation" id="bgAnimation"></div>
+    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> লগআউট</button>
+
+    <div class="container">
+        <div class="welcome-section">
+            <h1><i class="fas fa-server"></i> ইফতেখার হোস্টিং বোর্ড</h1>
+            <div style="font-size: 18px; margin-top: 10px;">তোমাদেরকে স্বাগতম! 🚀</div>
+            <div class="user-badge"><i class="fas fa-user"></i> <span id="username">ভিজিটর</span></div>
+        </div>
+
+        <div class="control-section">
+            <button class="ctrl-btn btn-start" id="startBtn"><i class="fas fa-play"></i> স্টার্ট</button>
+            <button class="ctrl-btn btn-stop" id="stopBtn"><i class="fas fa-stop"></i> স্টপ</button>
+            <button class="ctrl-btn btn-restart" id="restartBtn"><i class="fas fa-sync-alt"></i> রিস্টার্ট</button>
+        </div>
+
+        <div class="server-status">
+            <div class="status-indicator">
+                <div class="status-led online" id="statusLed"></div>
+                <span id="serverStatusText">সার্ভার অনলাইন</span>
+            </div>
+            <div class="status-indicator"><i class="fas fa-microchip"></i> CPU: <span id="cpuLoad">23</span>%</div>
+            <div class="status-indicator"><i class="fas fa-memory"></i> RAM: <span id="ramLoad">45</span>%</div>
+        </div>
+
+        <div class="console-section">
+            <div class="console-header">
+                <div class="console-title"><i class="fas fa-terminal"></i> লাইভ কনসোল লগ</div>
+                <div><button onclick="clearConsole()" style="background:rgba(255,255,255,0.1); border:none; padding:5px 12px; border-radius:5px; color:white; cursor:pointer;"><i class="fas fa-trash"></i> ক্লিয়ার</button></div>
+            </div>
+            <div class="console-body" id="consoleBody">
+                <div class="log-entry log-success"><span class="log-time">[সিস্টেম]</span> ইফতেখার হোস্টিং বোর্ড শুরু হয়েছে...</div>
+                <div class="log-entry log-info"><span class="log-time">[সিস্টেম]</span> ফাইল ম্যানেজার সক্রিয় (ইনলাইন এডিট + সেভ সহ)...</div>
+            </div>
+        </div>
+
+        <div class="file-manager">
+            <div class="file-header">
+                <h3><i class="fas fa-folder-tree"></i> ফাইল ম্যানেজার</h3>
+                <p style="font-size: 12px; color: #aaa;">ZIP ফাইল আপলোড করুন | ফাইল এডিট করুন → সেভ বাটনে ক্লিক করুন</p>
+            </div>
+            
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; margin-bottom: 10px;"></i>
+                <p><strong>ক্লিক করুন বা ড্র্যাগ করুন</strong></p>
+                <p style="font-size: 12px;">ZIP ফাইল আপলোড সাপোর্ট (ফোল্ডার স্ট্রাকচার সংরক্ষিত থাকবে)</p>
+                <input type="file" id="fileInput" accept=".zip" style="display: none;">
+            </div>
+
+            <div class="file-tree" id="fileTree">
+                <div style="text-align: center; color: #aaa; padding: 20px;">
+                    <i class="fas fa-inbox"></i> এখনো কোন ফাইল আপলোড হয়নি
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let serverRunning = true;
+        let fileSystem = {};
+        let mainFilePath = null;
+        let cpuInterval, ramInterval, randomLogInterval;
+
+        function addLog(message, type = 'info') {
+            const consoleBody = document.getElementById('consoleBody');
+            const logDiv = document.createElement('div');
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('bn-BD');
+            logDiv.className = `log-entry log-${type}`;
+            logDiv.innerHTML = `<span class="log-time">[${timeStr}]</span> ${message}`;
+            consoleBody.appendChild(logDiv);
+            logDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if(consoleBody.children.length > 300) consoleBody.removeChild(consoleBody.children[0]);
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleBody').innerHTML = '';
+            addLog('কনসোল ক্লিয়ার করা হয়েছে', 'warning');
+        }
+
+        // ফোল্ডার ট্রি রেন্ডার
+        function renderFileTree() {
+            const treeContainer = document.getElementById('fileTree');
+            
+            if(Object.keys(fileSystem).length === 0) {
+                treeContainer.innerHTML = '<div style="text-align: center; color: #aaa; padding: 20px;"><i class="fas fa-inbox"></i> এখনো কোন ফাইল আপলোড হয়নি</div>';
+                return;
+            }
+
+            treeContainer.innerHTML = '';
+            const root = document.createElement('div');
+            root.className = 'folder-item';
+            
+            function renderNode(node, nodeName, container, level = 0) {
+                if(node.type === 'file') {
+                    const fileDiv = document.createElement('div');
+                    const uniqueId = 'file_' + node.path.replace(/[\/.]/g, '_');
+                    fileDiv.id = uniqueId;
+                    fileDiv.className = `file-item-tree ${mainFilePath === node.path ? 'main-file' : ''}`;
+                    
+                    let icon = 'fa-file-code';
+                    if(node.name.endsWith('.py')) icon = 'fa-python';
+                    else if(node.name.endsWith('.html')) icon = 'fa-html5';
+                    else if(node.name.endsWith('.css')) icon = 'fa-css3';
+                    else if(node.name.endsWith('.js')) icon = 'fa-js';
+                    
+                    fileDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div class="file-info-tree" onclick="toggleFileContent('${uniqueId}')">
+                                <i class="fas ${icon}"></i>
+                                <div class="file-name-tree">
+                                    ${node.name}
+                                    ${mainFilePath === node.path ? '<span class="main-badge">★ মেইন ফাইল</span>' : ''}
+                                    <span class="file-size">(${node.size})</span>
+                                </div>
+                            </div>
+                            <div class="file-actions-tree">
+                                <button class="edit-btn" onclick="enableEdit('${uniqueId}', '${node.path}')"><i class="fas fa-pen"></i> এডিট</button>
+                                <button class="set-main-btn" onclick="setMainFile('${node.path}')"><i class="fas fa-star"></i> মেইন</button>
+                                <button class="delete-btn" onclick="deleteFile('${node.path}')"><i class="fas fa-trash"></i> ডিলিট</button>
+                            </div>
+                        </div>
+                        <div class="file-content-area">
+                            <textarea id="textarea_${uniqueId}" class="file-content-textarea" placeholder="ফাইলের কন্টেন্ট এডিট করুন..."></textarea>
+                            <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                                <button class="save-btn" onclick="saveFileContent('${uniqueId}', '${node.path}')" style="display: none;" id="save_${uniqueId}">
+                                    <i class="fas fa-save"></i> সেভ করুন
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(fileDiv);
+                } 
+                else if(node.type === 'folder') {
+                    const folderDiv = document.createElement('div');
+                    folderDiv.className = 'folder-item';
+                    
+                    const toggleDiv = document.createElement('div');
+                    toggleDiv.className = 'folder-toggle';
+                    toggleDiv.innerHTML = `
+                        <i class="fas fa-folder" id="icon-${node.path.replace(/\//g, '-')}"></i>
+                        <span><strong>📁 ${node.name}</strong> <span style="font-size:11px; color:#aaa;">(${node.fileCount} ফাইল)</span></span>
+                        <i class="fas fa-chevron-right" style="margin-left:auto; transition:transform 0.3s;"></i>
+                    `;
+                    
+                    const childrenDiv = document.createElement('div');
+                    childrenDiv.className = 'folder-children';
+                    childrenDiv.id = `children-${node.path.replace(/\//g, '-')}`;
+                    
+                    let isOpen = false;
+                    toggleDiv.onclick = () => {
+                        isOpen = !isOpen;
+                        childrenDiv.classList.toggle('open', isOpen);
+                        const icon = toggleDiv.querySelector('.fa-chevron-right');
+                        const folderIcon = toggleDiv.querySelector('.fa-folder');
+                        if(isOpen) {
+                            icon.style.transform = 'rotate(90deg)';
+                            folderIcon.className = 'fas fa-folder-open';
+                        } else {
+                            icon.style.transform = 'rotate(0deg)';
+                            folderIcon.className = 'fas fa-folder';
+                        }
+                    };
+                    
+                    if(node.children) {
+                        for(const [childName, childNode] of Object.entries(node.children)) {
+                            renderNode(childNode, childName, childrenDiv, level + 1);
+                        }
+                    }
+                    
+                    folderDiv.appendChild(toggleDiv);
+                    folderDiv.appendChild(childrenDiv);
+                    container.appendChild(folderDiv);
+                }
+            }
+            
+            for(const [name, node] of Object.entries(fileSystem)) {
+                renderNode(node, name, root);
+            }
+            
+            treeContainer.appendChild(root);
+        }
+
+        // ফাইল কন্টেন্ট টগল
+        function toggleFileContent(uniqueId) {
+            const textarea = document.getElementById(`textarea_${uniqueId}`);
+            const saveBtn = document.getElementById(`save_${uniqueId}`);
+            if(textarea) {
+                if(textarea.style.display === 'none' || textarea.style.display === '') {
+                    textarea.style.display = 'block';
+                    if(saveBtn) saveBtn.style.display = 'inline-flex';
+                } else {
+                    textarea.style.display = 'none';
+                    if(saveBtn) saveBtn.style.display = 'none';
+                }
+            }
+        }
+
+        // এডিট ইন্সেবল
+        function enableEdit(uniqueId, filePath) {
+            const file = getFileByPath(filePath);
+            if(file) {
+                const textarea = document.getElementById(`textarea_${uniqueId}`);
+                if(textarea) {
+                    textarea.value = file.content;
+                    textarea.style.display = 'block';
+                    const saveBtn = document.getElementById(`save_${uniqueId}`);
+                    if(saveBtn) saveBtn.style.display = 'inline-flex';
+                    addLog(`এডিট মোড সক্রিয়: ${file.name}`, 'info');
+                }
+            }
+        }
+
+        // ফাইল সেভ (ব্যাকএন্ডে পাঠানো)
+        async function saveFileContent(uniqueId, filePath) {
+            const textarea = document.getElementById(`textarea_${uniqueId}`);
+            const newContent = textarea.value;
+            const file = getFileByPath(filePath);
+            
+            if(file) {
+                try {
+                    const response = await fetch('/api/save-file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ file_path: filePath, content: newContent })
+                    });
+                    const data = await response.json();
+                    
+                    if(data.success) {
+                        file.content = newContent;
+                        const newSize = newContent.length;
+                        file.size = formatFileSize(newSize);
+                        
+                        addLog(`✏️ "${file.name}" ফাইলের কন্টেন্ট সেভ করা হয়েছে`, 'success');
+                        
+                        textarea.style.display = 'none';
+                        const saveBtn = document.getElementById(`save_${uniqueId}`);
+                        if(saveBtn) saveBtn.style.display = 'none';
+                        
+                        renderFileTree();
+                        showNotification(`✅ "${file.name}" সেভ হয়েছে!`, 'success');
+                    } else {
+                        addLog(`সেভ ব্যর্থ: ${data.message}`, 'error');
+                    }
+                } catch(err) {
+                    addLog(`সেভ ব্যর্থ: ${err.message}`, 'error');
+                }
+            } else {
+                addLog(`সেভ ব্যর্থ: ফাইল পাওয়া যায়নি`, 'error');
+            }
+        }
+
+        // ফাইল সিস্টেমে ফাইল যোগ করা
+        function addFileToSystem(filePath, content, size) {
+            const parts = filePath.split('/');
+            let current = fileSystem;
+            let currentPath = '';
+            
+            for(let i = 0; i < parts.length - 1; i++) {
+                currentPath += (currentPath ? '/' : '') + parts[i];
+                if(!current[parts[i]]) {
+                    current[parts[i]] = {
+                        type: 'folder',
+                        name: parts[i],
+                        path: currentPath,
+                        children: {},
+                        fileCount: 0
+                    };
+                }
+                current = current[parts[i]].children;
+            }
+            
+            const fileName = parts[parts.length - 1];
+            const fileObj = {
+                type: 'file',
+                name: fileName,
+                path: filePath,
+                content: content,
+                size: size,
+                uploadDate: new Date().toISOString()
+            };
+            
+            current[fileName] = fileObj;
+            
+            let parent = fileSystem;
+            for(let i = 0; i < parts.length - 1; i++) {
+                if(parent[parts[i]]) {
+                    parent[parts[i]].fileCount = (parent[parts[i]].fileCount || 0) + 1;
+                    parent = parent[parts[i]].children;
+                }
+            }
+            
+            return fileObj;
+        }
+
+        function getFileByPath(path) {
+            const parts = path.split('/');
+            let current = fileSystem;
+            
+            for(let i = 0; i < parts.length; i++) {
+                if(current[parts[i]]) {
+                    if(i === parts.length - 1 && current[parts[i]].type === 'file') {
+                        return current[parts[i]];
+                    }
+                    current = current[parts[i]].children;
+                } else {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        // ফাইল ডিলিট (ব্যাকএন্ডে)
+        async function deleteFile(path) {
+            const file = getFileByPath(path);
+            if(file) {
+                if(!confirm(`"${file.name}" ডিলিট করতে চান?`)) return;
+                
+                try {
+                    const response = await fetch('/api/delete-file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ file_path: path })
+                    });
+                    const data = await response.json();
+                    
+                    if(data.success) {
+                        const parts = path.split('/');
+                        let current = fileSystem;
+                        for(let i = 0; i < parts.length - 1; i++) {
+                            current = current[parts[i]].children;
+                        }
+                        delete current[parts[parts.length - 1]];
+                        
+                        if(mainFilePath === path) mainFilePath = null;
+                        renderFileTree();
+                        addLog(`"${file.name}" ডিলিট করা হয়েছে`, 'error');
+                        showNotification(`"${file.name}" ডিলিট করা হয়েছে`, 'error');
+                    } else {
+                        addLog(`ডিলিট ব্যর্থ: ${data.message}`, 'error');
+                    }
+                } catch(err) {
+                    addLog(`ডিলিট ব্যর্থ: ${err.message}`, 'error');
+                }
+            }
+        }
+
+        // মেইন ফাইল সেট (ব্যাকএন্ডে)
+        async function setMainFile(path) {
+            try {
+                const response = await fetch('/api/set-main-file', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_path: path })
+                });
+                const data = await response.json();
+                
+                if(data.success) {
+                    mainFilePath = path;
+                    const file = getFileByPath(path);
+                    renderFileTree();
+                    addLog(`"${file.name}" কে মেইন ফাইল হিসেবে সিলেক্ট করা হয়েছে`, 'success');
+                    showNotification(data.message, 'success');
+                } else {
+                    addLog(data.message, 'error');
+                }
+            } catch(err) {
+                addLog(`মেইন ফাইল সেট করতে ব্যর্থ: ${err.message}`, 'error');
+            }
+        }
+
+        // ZIP আপলোড (ব্যাকএন্ডে)
+        async function uploadZipFile(zipFile) {
+            addLog(`ZIP ফাইল আপলোড হচ্ছে: ${zipFile.name}`, 'info');
+            
+            const formData = new FormData();
+            formData.append('file', zipFile);
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if(data.success) {
+                    addLog(`✅ আপলোড সফল!`, 'success');
+                    
+                    if(data.file_tree) {
+                        // fileSystem রিসেট করে নতুন ডাটা লোড
+                        fileSystem = {};
+                        
+                        function loadTreeToFileSystem(tree, currentParent = null) {
+                            for(const item of tree) {
+                                if(item.type === 'folder') {
+                                    const folderObj = {
+                                        type: 'folder',
+                                        name: item.name,
+                                        path: item.path,
+                                        children: {},
+                                        fileCount: item.children?.length || 0
+                                    };
+                                    if(currentParent) {
+                                        currentParent[item.name] = folderObj;
+                                    } else {
+                                        fileSystem[item.name] = folderObj;
+                                    }
+                                    if(item.children && item.children.length > 0) {
+                                        loadTreeToFileSystem(item.children, folderObj.children);
+                                    }
+                                } else {
+                                    const fileObj = {
+                                        type: 'file',
+                                        name: item.name,
+                                        path: item.path,
+                                        content: item.content || '',
+                                        size: formatFileSize(item.size || 0),
+                                        uploadDate: new Date().toISOString()
+                                    };
+                                    if(currentParent) {
+                                        currentParent[item.name] = fileObj;
+                                    } else {
+                                        fileSystem[item.name] = fileObj;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        loadTreeToFileSystem(data.file_tree);
+                        renderFileTree();
+                        addLog(`📁 মোট ফাইল/ফোল্ডার লোড হয়েছে`, 'success');
+                    }
+                } else {
+                    addLog(`❌ আপলোড ব্যর্থ: ${data.message}`, 'error');
+                    showNotification(data.message, 'error');
+                }
+            } catch(error) {
+                addLog(`❌ আপলোড ব্যর্থ: ${error.message}`, 'error');
+                console.error('Upload error:', error);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if(bytes < 1024) return bytes + ' B';
+            if(bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / 1048576).toFixed(2) + ' MB';
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: ${type === 'success' ? 'rgba(0, 204, 68, 0.95)' : 'rgba(255, 68, 68, 0.95)'};
+                backdrop-filter: blur(10px);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 12px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 14px;
+                z-index: 2000;
+                animation: slideInRight 0.3s ease;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            `;
+            notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i> ${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if(file.name.endsWith('.zip')) {
+                    uploadZipFile(file);
+                } else {
+                    addLog(`শুধুমাত্র ZIP ফাইল সাপোর্ট করে: ${file.name}`, 'error');
+                }
+            });
+        }
+
+        // সার্ভার কন্ট্রোল
+        function startServer() {
+            if(serverRunning) { addLog('সার্ভার ইতিমধ্যে চলছে!', 'warning'); return; }
+            serverRunning = true;
+            document.getElementById('statusLed').className = 'status-led online';
+            document.getElementById('serverStatusText').textContent = 'সার্ভার অনলাইন';
+            addLog('🚀 সার্ভার স্টার্ট করা হয়েছে', 'success');
+            startMonitoring();
+        }
+
+        function stopServer() {
+            if(!serverRunning) { addLog('সার্ভার ইতিমধ্যে বন্ধ!', 'warning'); return; }
+            serverRunning = false;
+            document.getElementById('statusLed').className = 'status-led offline';
+            document.getElementById('serverStatusText').textContent = 'সার্ভার অফলাইন';
+            addLog('🛑 সার্ভার স্টপ করা হয়েছে', 'error');
+            stopMonitoring();
+        }
+
+        function restartServer() {
+            addLog('🔄 সার্ভার রিস্টার্ট শুরু...', 'warning');
+            stopServer();
+            setTimeout(() => { startServer(); addLog('✅ রিস্টার্ট সম্পূর্ণ!', 'success'); }, 1500);
+        }
+
+        function startMonitoring() {
+            cpuInterval = setInterval(() => {
+                if(serverRunning) document.getElementById('cpuLoad').textContent = Math.floor(Math.random() * 30 + 10);
+            }, 3000);
+            ramInterval = setInterval(() => {
+                if(serverRunning) document.getElementById('ramLoad').textContent = Math.floor(Math.random() * 40 + 20);
+            }, 3000);
+            randomLogInterval = setInterval(() => {
+                if(serverRunning) {
+                    const acts = ['API রিকোয়েস্ট', 'ডাটাবেস কোয়েরি', 'ক্যাশে আপডেট', 'ব্যাকআপ', 'ফাইল স্ক্যান'];
+                    addLog(acts[Math.floor(Math.random() * acts.length)] + ' প্রসেস করা হয়েছে', 'info');
+                }
+            }, 10000);
+        }
+
+        function stopMonitoring() {
+            clearInterval(cpuInterval); clearInterval(ramInterval); clearInterval(randomLogInterval);
+        }
+
+        async function loadUser() {
+            const userData = localStorage.getItem('currentUser');
+            if(userData) { 
+                currentUser = JSON.parse(userData); 
+                document.getElementById('username').textContent = currentUser.username; 
+                addLog(`${currentUser.username} লগইন করেছেন`, 'success');
+                
+                // মেইন ফাইল লোড
+                try {
+                    const res = await fetch('/api/get-main-file');
+                    const data = await res.json();
+                    if(data.success && data.main_file_path) {
+                        mainFilePath = data.main_file_path;
+                    }
+                } catch(err) {}
+            }
+            else { 
+                document.getElementById('username').textContent = 'গেস্ট'; 
+                addLog('গেস্ট ইউজার সংযুক্ত', 'info');
+                // ডেমো লগইন
+                await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'demo', password: 'demo123' })
+                });
+            }
+        }
+
+        function logout() { 
+            addLog('লগআউট...', 'warning'); 
+            setTimeout(() => { 
+                localStorage.removeItem('currentUser'); 
+                window.location.href = 'index.html'; 
+            }, 1000); 
+        }
+
+        function createParticles() {
+            const bg = document.getElementById('bgAnimation');
+            for(let i = 0; i < 80; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDelay = Math.random() * 10 + 's';
+                p.style.animationDuration = Math.random() * 15 + 5 + 's';
+                bg.appendChild(p);
+            }
+        }
+
+        // এনিমেশন স্টাইল
+        const animStyle = document.createElement('style');
+        animStyle.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(animStyle);
+
+        // ইভেন্ট লিসেনার
+        document.getElementById('startBtn').addEventListener('click', startServer);
+        document.getElementById('stopBtn').addEventListener('click', stopServer);
+        document.getElementById('restartBtn').addEventListener('click', restartServer);
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+        uploadArea.addEventListener('drop', (e) => { 
+            e.preventDefault(); 
+            uploadArea.classList.remove('drag-over'); 
+            handleFiles(e.dataTransfer.files); 
+        });
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        loadUser();
+        createParticles();
+        startMonitoring();
+    </script>
+</body>
+</html>
