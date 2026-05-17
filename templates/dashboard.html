@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইফতেখার হোস্টিং | ড্যাশবোর্ড</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0a0515 50%, #0a0a2a 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        .header {
+            text-align: center;
+            padding: 25px;
+            background: rgba(15, 20, 45, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,77,77,0.3);
+        }
+        .header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 32px;
+            background: linear-gradient(135deg, #ff4d4d, #4d4dff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .user-badge {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 6px 18px;
+            background: rgba(255,77,77,0.2);
+            border-radius: 50px;
+            font-size: 13px;
+        }
+        .main-badge {
+            display: inline-block;
+            background: #00cc44;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+        
+        .live-console {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            margin-bottom: 25px;
+        }
+        .console-header {
+            background: linear-gradient(135deg, rgba(255, 77, 77, 0.2), rgba(77, 77, 255, 0.2));
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 77, 77, 0.3);
+        }
+        .console-title { font-family: 'Orbitron', monospace; font-size: 16px; }
+        .console-body {
+            height: 160px;
+            overflow-y: auto;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            padding: 4px 10px;
+            margin-bottom: 4px;
+            border-left: 3px solid;
+        }
+        .log-info { border-left-color: #4d4dff; color: #aaa; }
+        .log-success { border-left-color: #00ff00; color: #00ff00; }
+        .log-warning { border-left-color: #ffaa00; color: #ffaa00; }
+        .log-error { border-left-color: #ff4444; color: #ff4444; }
+        .log-time { color: #888; margin-right: 12px; font-size: 10px; }
+        
+        .upload-area {
+            border: 2px dashed rgba(255,77,77,0.5);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 25px;
+            background: rgba(255,255,255,0.02);
+        }
+        .upload-area:hover { border-color: #ff4d4d; background: rgba(255,77,77,0.1); }
+        .upload-area.drag-over { border-color: #4d4dff; background: rgba(77,77,255,0.2); }
+        
+        .file-explorer {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(77,77,255,0.3);
+            margin-bottom: 25px;
+        }
+        .explorer-header {
+            background: linear-gradient(135deg, rgba(77,77,255,0.2), rgba(255,77,77,0.2));
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(77,77,255,0.3);
+        }
+        .file-tree { padding: 15px; max-height: 400px; overflow-y: auto; }
+        
+        .file-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-left: 2px solid #ff4d4d;
+        }
+        .file-item.main-active { border-left-color: #00ff00; background: rgba(0,255,0,0.1); }
+        .folder-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .btn-icon {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            padding: 4px 10px;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .edit-btn { background: rgba(77,77,255,0.3); }
+        .delete-btn { background: rgba(255,68,68,0.3); }
+        .main-btn { background: rgba(255,170,0,0.3); }
+        .start-btn { background: rgba(0,204,68,0.3); }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #0a0a2a;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 800px;
+            border: 1px solid rgba(255,77,77,0.5);
+        }
+        .modal-header {
+            padding: 12px 20px;
+            background: rgba(255,77,77,0.2);
+            display: flex;
+            justify-content: space-between;
+        }
+        .modal-body { padding: 15px; }
+        .modal-body textarea {
+            width: 100%;
+            height: 350px;
+            background: #0a0a1a;
+            border: 1px solid rgba(255,77,77,0.3);
+            color: #fff;
+            padding: 12px;
+            font-family: monospace;
+        }
+        .modal-footer {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .save-btn { background: #00cc44; padding: 6px 18px; border: none; border-radius: 8px; cursor: pointer; }
+        .cancel-btn { background: #ff4444; padding: 6px 18px; border: none; border-radius: 8px; cursor: pointer; }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #00cc44;
+            padding: 10px 20px;
+            border-radius: 10px;
+            animation: slideIn 0.3s;
+            z-index: 1000;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .logout-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,77,77,0.2);
+            border: 1px solid rgba(255,77,77,0.5);
+            padding: 8px 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> লগআউট</button>
+    
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-server"></i> ইফতেখার হোস্টিং বোর্ড</h1>
+            <div style="font-size: 16px;">তোমাদেরকে স্বাগতম! 🚀</div>
+            <div class="user-badge">
+                <i class="fas fa-user"></i> <span id="username">ভিজিটর</span>
+                <span id="mainBadge" style="margin-left: 10px;"></span>
+            </div>
+        </div>
+        
+        <div class="live-console">
+            <div class="console-header">
+                <div class="console-title"><i class="fas fa-terminal"></i> লাইভ কনসোল লগ</div>
+                <button onclick="clearLog()" style="background:rgba(255,255,255,0.1); border:none; padding:4px 10px; border-radius:5px; color:white; cursor:pointer;">ক্লিয়ার</button>
+            </div>
+            <div class="console-body" id="consoleLog">
+                <div class="log-entry log-success"><span class="log-time">[সিস্টেম]</span> ড্যাশবোর্ড শুরু হয়েছে</div>
+            </div>
+        </div>
+        
+        <div class="upload-area" id="uploadArea">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 40px;"></i>
+            <p><strong>ZIP ফাইল আপলোড করুন</strong></p>
+            <p style="font-size: 11px; color: #aaa;">ড্র্যাগ বা ক্লিক করুন</p>
+            <input type="file" id="fileInput" accept=".zip" style="display: none;">
+        </div>
+        
+        <div class="file-explorer">
+            <div class="explorer-header">
+                <h3><i class="fas fa-folder-tree"></i> ফাইল এক্সপ্লোরার</h3>
+                <button class="btn-icon" onclick="loadFiles()" style="background:#4d4dff;">রিফ্রেশ</button>
+            </div>
+            <div class="file-tree" id="fileTree">
+                <div style="text-align: center; padding: 30px; color: #aaa;">কোন ফাইল নেই</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>ফাইল এডিট করুন</h3>
+                <button onclick="closeModal()" style="background:none; border:none; color:white; font-size:22px;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="editContent"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeModal()">বাতিল</button>
+                <button class="save-btn" onclick="saveFileContent()">সেভ করুন</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentUser = null;
+        let currentEditFile = null;
+        let currentMainFile = null;
+        
+        function addLog(msg, type = 'info') {
+            const logDiv = document.getElementById('consoleLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `<span class="log-time">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+            logDiv.appendChild(entry);
+            entry.scrollIntoView();
+            if(logDiv.children.length > 100) logDiv.removeChild(logDiv.children[0]);
+        }
+        
+        function clearLog() {
+            document.getElementById('consoleLog').innerHTML = '';
+            addLog('লগ ক্লিয়ার করা হয়েছে', 'warning');
+        }
+        
+        function showToast(msg, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.background = type === 'success' ? '#00cc44' : '#ff4444';
+            toast.innerHTML = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        async function loadUser() {
+            const data = localStorage.getItem('currentUser');
+            if(data) {
+                currentUser = JSON.parse(data);
+                document.getElementById('username').textContent = currentUser.username;
+                await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: currentUser.username, password: currentUser.password})
+                });
+                await loadMainFile();
+                await loadFiles();
+                addLog(`${currentUser.username} লগইন করেছেন`, 'success');
+            } else {
+                window.location.href = '/';
+            }
+        }
+        
+        async function loadMainFile() {
+            const res = await fetch('/api/get-main-file');
+            const data = await res.json();
+            if(data.success && data.main_file_name) {
+                currentMainFile = data.main_file_path;
+                document.getElementById('mainBadge').innerHTML = `<span class="main-badge">⭐ মেইন: ${data.main_file_name}</span>`;
+            }
+        }
+        
+        async function setMainFile(path, name) {
+            const res = await fetch('/api/set-main-file', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({file_path: path})
+            });
+            const data = await res.json();
+            if(data.success) {
+                currentMainFile = path;
+                document.getElementById('mainBadge').innerHTML = `<span class="main-badge">⭐ মেইন: ${name}</span>`;
+                addLog(`"${name}" কে মেইন ফাইল সেট করা হয়েছে`, 'success');
+                await loadFiles();
+            }
+        }
+        
+        async function loadFiles() {
+            const res = await fetch('/api/get-files');
+            const data = await res.json();
+            if(data.success && data.file_tree) {
+                renderFiles(data.file_tree);
+            }
+        }
+        
+        function renderFiles(files) {
+            const container = document.getElementById('fileTree');
+            if(!files || files.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 30px; color: #aaa;">কোন ফাইল নেই</div>';
+                return;
+            }
+            container.innerHTML = '';
+            files.forEach(file => {
+                const div = document.createElement('div');
+                const isMain = (currentMainFile === file.full_path);
+                div.className = `file-item ${isMain ? 'main-active' : ''}`;
+                let icon = file.type === 'folder' ? 'fa-folder' : 'fa-file-code';
+                if(file.name.endsWith('.py')) icon = 'fa-python';
+                if(file.name.endsWith('.html')) icon = 'fa-html5';
+                
+                div.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px; flex:1; cursor:pointer;" onclick="previewFile('${file.full_path}')">
+                        <i class="fab ${icon}"></i>
+                        <div>
+                            <strong>${file.name}</strong>
+                            ${isMain ? '<span class="main-badge" style="margin-left:8px;">⭐ মেইন ফাইল</span>' : ''}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        ${file.is_editable ? `<button class="btn-icon edit-btn" onclick="openEdit('${file.full_path}', '${file.name}')"><i class="fas fa-pen"></i> এডিট</button>` : ''}
+                        <button class="btn-icon main-btn" onclick="setMainFile('${file.full_path}', '${file.name}')"><i class="fas fa-star"></i> মেইন</button>
+                        <button class="btn-icon delete-btn" onclick="deleteFile('${file.full_path}', '${file.name}')"><i class="fas fa-trash"></i> ডিলিট</button>
+                        ${file.name.endsWith('.py') ? `<button class="btn-icon start-btn" onclick="startScript('${file.full_path}')"><i class="fas fa-play"></i> রান</button>` : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        async function previewFile(path) {
+            window.open(`/api/get-file-content?path=${encodeURIComponent(path)}`, '_blank');
+        }
+        
+        async function openEdit(path, name) {
+            const res = await fetch(`/api/get-file-content?path=${encodeURIComponent(path)}`);
+            const data = await res.json();
+            if(data.success) {
+                currentEditFile = path;
+                document.getElementById('editContent').value = data.content;
+                document.getElementById('editModal').style.display = 'flex';
+                addLog(`এডিট মোড: ${name}`, 'info');
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditFile = null;
+        }
+        
+        async function saveFileContent() {
+            if(!currentEditFile) return;
+            const content = document.getElementById('editContent').value;
+            const res = await fetch('/api/save-file', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({file_path: currentEditFile, content: content})
+            });
+            const data = await res.json();
+            if(data.success) {
+                showToast('ফাইল সেভ হয়েছে', 'success');
+                addLog('ফাইল সেভ করা হয়েছে', 'success');
+                closeModal();
+            }
+        }
+        
+        async function deleteFile(path, name) {
+            if(!confirm(`"${name}" ডিলিট করবেন?`)) return;
+            const res = await fetch('/api/delete-file', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({file_path: path})
+            });
+            const data = await res.json();
+            if(data.success) {
+                showToast('ডিলিট হয়েছে', 'success');
+                addLog(`"${name}" ডিলিট করা হয়েছে`, 'warning');
+                if(currentMainFile === path) {
+                    currentMainFile = null;
+                    document.getElementById('mainBadge').innerHTML = '';
+                }
+                await loadFiles();
+            }
+        }
+        
+        async function startScript(path) {
+            addLog(`স্ক্রিপ্ট স্টার্ট হচ্ছে...`, 'info');
+            const res = await fetch('/api/start-script', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({script_path: path})
+            });
+            const data = await res.json();
+            if(data.success) addLog(data.message, 'success');
+        }
+        
+        // ==================== আপলোড ফাংশন (সঠিক) ====================
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            addLog(`⏳ আপলোড শুরু: ${file.name}`, 'info');
+            showToast(`আপলোড হচ্ছে: ${file.name}`, 'info');
+            
+            try {
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if(data.success) {
+                    addLog(`✅ ${data.message}`, 'success');
+                    showToast(data.message, 'success');
+                    if(data.file_tree) {
+                        renderFiles(data.file_tree);
+                    } else {
+                        await loadFiles();
+                    }
+                } else {
+                    addLog(`❌ ${data.message}`, 'error');
+                    showToast(data.message, 'error');
+                }
+            } catch(err) {
+                addLog(`❌ আপলোড ব্যর্থ: ${err.message}`, 'error');
+                showToast(`আপলোড ব্যর্থ`, 'error');
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = '/';
+        }
+        
+        // ইভেন্ট লিসেনার
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        uploadArea.onclick = () => fileInput.click();
+        uploadArea.ondragover = (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); };
+        uploadArea.ondragleave = () => uploadArea.classList.remove('drag-over');
+        uploadArea.ondrop = (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            if(e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+        };
+        fileInput.onchange = (e) => {
+            if(e.target.files[0]) uploadFile(e.target.files[0]);
+        };
+        
+        loadUser();
+    </script>
+</body>
+</html>
