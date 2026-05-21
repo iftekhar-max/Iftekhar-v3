@@ -198,7 +198,7 @@ def run_code():
     try:
         process_id = str(uuid.uuid4())[:8]
         
-        def run_script():
+        def run_script(username):
             username = session.get('username')
             user_folder = os.path.join(UPLOAD_FOLDER, username)
             process = subprocess.Popen(
@@ -227,7 +227,7 @@ def run_code():
             if username in running_processes:
                 del running_processes[username]
         
-        thread = threading.Thread(target=run_script)
+        thread = threading.Thread(target=run_script, args=(username,)
         thread.start()
         
         return jsonify({'success': True, 'process_id': process_id, 'message': 'Code running...'})
