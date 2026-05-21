@@ -1,0 +1,344 @@
+/* ইফতেখার হোস্টিং প্ল্যাটফর্ম - কাস্টম স্টাইলস */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --primary-red: #ff4d4d;
+    --primary-blue: #4d4dff;
+    --primary-green: #00ff00;
+    --dark-bg: #0a0a0a;
+    --darker-bg: #050510;
+    --glass-bg: rgba(10, 10, 20, 0.6);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, var(--dark-bg) 0%, #0a0515 50%, var(--darker-bg) 100%);
+    color: #fff;
+    min-height: 100vh;
+}
+
+/* কাস্টম স্ক্রলবার */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary-red), var(--primary-blue));
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #ff6666, #6666ff);
+}
+
+/* গ্লাসমরফিজম */
+.glass-effect {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 77, 77, 0.3);
+    border-radius: 20px;
+}
+
+/* অ্যানিমেশন */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ফ্লোটিং পার্টিকেলস */
+.particle {
+    position: fixed;
+    width: 2px;
+    height: 2px;
+    background: linear-gradient(135deg, var(--primary-red), var(--primary-blue));
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* বাটন এনিমেশন */
+.btn-glow {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.btn-glow::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-glow:hover::before {
+    left: 100%;
+}
+
+.btn-glow:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 77, 77, 0.5);
+}
+
+/* কনসোল স্টাইল */
+.console-line {
+    font-family: 'Courier New', monospace;
+    padding: 8px 12px;
+    margin: 4px 0;
+    border-left: 3px solid;
+    animation: slideInRight 0.3s ease;
+}
+
+.console-line.info {
+    border-left-color: var(--primary-blue);
+    color: #aaa;
+}
+
+.console-line.success {
+    border-left-color: var(--primary-green);
+    color: var(--primary-green);
+}
+
+.console-line.warning {
+    border-left-color: #ffaa00;
+    color: #ffaa00;
+}
+
+.console-line.error {
+    border-left-color: var(--primary-red);
+    color: var(--primary-red);
+}
+
+/* টার্মিনাল কার্সার ব্লিংক */
+.terminal-cursor {
+    display: inline-block;
+    width: 10px;
+    height: 18px;
+    background-color: #fff;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0;
+    }
+}
+
+/* ফাইল ট্রি স্টাইল */
+.file-tree-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.file-tree-item:hover {
+    background: rgba(255, 77, 77, 0.1);
+    transform: translateX(5px);
+}
+
+.folder-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.folder-children {
+    display: none;
+    margin-left: 20px;
+}
+
+.folder-children.open {
+    display: block;
+}
+
+/* লোডিং স্পিনার */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 77, 77, 0.3);
+    border-top-color: var(--primary-red);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* রেস্পন্সিভ ডিজাইন */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .glass-card {
+        padding: 1.5rem;
+    }
+    
+    .file-item {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .file-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* কাস্টম ফর্ম এলিমেন্ট */
+input, textarea, select {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 77, 77, 0.3);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-red);
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.3);
+}
+
+/* নোটিফিকেশন টোস্ট */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 12px 24px;
+    border-radius: 12px;
+    border-left: 4px solid var(--primary-green);
+    z-index: 1000;
+    animation: slideInRight 0.3s ease;
+}
+
+.toast-notification.error {
+    border-left-color: var(--primary-red);
+}
+
+.toast-notification.warning {
+    border-left-color: #ffaa00;
+}
+
+/* স্ট্যাটাস ইন্ডিকেটর */
+.status-led {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.status-led.online {
+    background: var(--primary-green);
+    box-shadow: 0 0 10px var(--primary-green);
+    animation: pulse 2s infinite;
+}
+
+.status-led.offline {
+    background: var(--primary-red);
+    box-shadow: 0 0 10px var(--primary-red);
+}
+
+.status-led.maintenance {
+    background: #ffaa00;
+    box-shadow: 0 0 10px #ffaa00;
+    animation: pulse 2s infinite;
+}
+
+/* কোড এডিটর স্টাইল */
+.code-editor {
+    font-family: 'Courier New', 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    tab-size: 4;
+}
+
+/* ড্র্যাগ এন্ড ড্রপ এরিয়া */
+.drop-zone {
+    border: 2px dashed rgba(255, 77, 77, 0.5);
+    transition: all 0.3s ease;
+}
+
+.drop-zone.drag-over {
+    border-color: var(--primary-blue);
+    background: rgba(77, 77, 255, 0.1);
+}
+
+/* সাইবার টেক্সট ইফেক্ট */
+.cyber-text {
+    font-family: 'Orbitron', monospace;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.glitch-text {
+    position: relative;
+    animation: glitch 3s infinite;
+}
+
+@keyframes glitch {
+    0%, 100% {
+        text-shadow: 2px 0 var(--primary-red), -2px 0 var(--primary-blue);
+    }
+    33% {
+        text-shadow: -2px 0 var(--primary-red), 2px 0 var(--primary-blue);
+    }
+    66% {
+        text-shadow: 2px 2px var(--primary-red), -2px -2px var(--primary-blue);
+    }
+  }
