@@ -200,11 +200,11 @@ def run_code():
         
         def run_script():
             process = subprocess.Popen(
-                [sys.executable, filepath],
+                [sys.executable, filename],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                cwd=os.path.dirname(filepath)
+                cwd=user_folder
             )
             running_processes[username] = process
             
