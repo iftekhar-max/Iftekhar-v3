@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ফাইল ম্যানেজার - ইফতেখার হোস্টিং</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;500;700&display=swap');
+        
+        .cyber-bg { 
+            background: linear-gradient(135deg, #0a0a0a 0%, #0a0515 50%, #0a0a2a 100%); 
+        }
+        .glass-card {
+            background: rgba(10, 10, 20, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 77, 77, 0.3);
+        }
+        .file-item {
+            transition: all 0.3s ease;
+        }
+        .file-item:hover {
+            background: rgba(255, 77, 77, 0.1);
+            transform: translateX(5px);
+        }
+        .upload-area {
+            border: 2px dashed rgba(255, 77, 77, 0.5);
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #ff4d4d;
+            background: rgba(255, 77, 77, 0.1);
+        }
+        .upload-area.drag-over {
+            border-color: #4d4dff;
+            background: rgba(77, 77, 255, 0.2);
+        }
+        .code-editor {
+            font-family: 'Courier New', monospace;
+            background: #0a0a1a;
+            border: 1px solid rgba(255, 77, 77, 0.3);
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #ff4d4d, #4d4dff); border-radius: 10px; }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .file-item {
+            animation: slideIn 0.3s ease;
+        }
+    </style>
+</head>
+<body class="cyber-bg text-white">
+    <nav class="bg-black bg-opacity-50 backdrop-blur-lg border-b border-red-500 p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center flex-wrap gap-4">
+            <div class="flex items-center">
+                <i class="fas fa-folder-tree text-red-500 text-2xl"></i>
+                <span class="text-xl font-bold ml-2">ফাইল ম্যানেজার</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span><i class="fas fa-user"></i> <span id="username">{{ username }}</span></span>
+                <a href="/dashboard" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-tachometer-alt"></i> ড্যাশবোর্ড
+                </a>
+                <a href="/logout" class="bg-red-600 px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                    <i class="fas fa-sign-out-alt"></i> লগআউট
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- স্ট্যাটাস বার -->
+        <div class="glass-card rounded-lg p-4 mb-6">
+            <div class="flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <i class="fas fa-database text-blue-500"></i>
+                    <span class="ml-2">মোট ফাইল: <span id="totalFiles">0</span></span>
+                </div>
+                <div>
+                    <i class="fas fa-code text-green-500"></i>
+                    <span class="ml-2">পাইথন ফাইল: <span id="pythonFiles">0</span></span>
+                </div>
+                <div>
+                    <i class="fas fa-folder text-yellow-500"></i>
+                    <span class="ml-2">ফোল্ডার: <span id="totalFolders">0</span></span>
+                </div>
+                <button onclick="refreshFiles()" class="bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-600 transition">
+                    <i class="fas fa-sync-alt"></i> রিফ্রেশ
+                </button>
+            </div>
+        </div>
+
+        <!-- আপলোড এরিয়া -->
+        <div class="glass-card rounded-lg p-6 mb-6">
+            <h3 class="text-xl font-bold mb-4"><i class="fas fa-cloud-upload-alt"></i> ফাইল আপলোড</h3>
+            <div id="uploadArea" class="upload-area rounded-lg p-8 text-center cursor-pointer transition">
+                <i class="fas fa-cloud-upload-alt text-5xl text-red-500 mb-4"></i>
+                <p class="text-lg mb-2"><strong>ক্লিক করুন বা ড্র্যাগ করুন</strong></p>
+                <p class="text-gray-400 text-sm">ZIP ফাইল সমর্থিত (ফোল্ডার স্ট্রাকচার সংরক্ষিত থাকবে)</p>
+                <p class="text-gray-500 text-xs mt-2">সাপোর্টেড ফরম্যাট: .py, .txt, .json, .html, .css, .js, .zip</p>
+                <input type="file" id="fileInput" multiple accept=".py,.txt,.json,.html,.css,.js,.zip" style="display: none;">
+            </div>
+            <div id="uploadProgress" class="mt-4 hidden">
+                <div class="bg-gray-700 rounded-full h-2 overflow-hidden">
+                    <div id="progressBar" class="bg-gradient-to-r from-red-500 to-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                </div>
+                <p id="progressText" class="text-sm text-gray-400 mt-2 text-center">আপলোড হচ্ছে...</p>
+            </div>
+        </div>
+
+        <!-- ফাইল ব্রাউজার -->
+        <div class="glass-card rounded-lg p-6">
+            <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <h3 class="text-xl font-bold"><i class="fas fa-folder-open"></i> ফাইল ব্রাউজার</h3>
+                <div class="flex gap-2">
+                    <input type="text" id="searchInput" placeholder="ফাইল সার্চ করুন..." class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-red-500">
+                    <button onclick="createNewFile()" class="bg-green-600 px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+                        <i class="fas fa-plus"></i> নতুন ফাইল
+                    </button>
+                    <button onclick="createNewFolder()" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                        <i class="fas fa-folder-plus"></i> নতুন ফোল্ডার
+                    </button>
+                </div>
+            </div>
+            
+            <div id="fileTree" class="space-y-2 max-h-[600px] overflow-y-auto">
+                <div class="text-center text-gray-500 py-8">
+                    <i class="fas fa-spinner fa-spin text-2xl"></i>
+                    <p class="mt-2">লোড হচ্ছে...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- মোডাল জন্য -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="glass-card rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 id="modalTitle" class="text-xl font-bold mb-4"></h3>
+            <input type="text" id="modalInput" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:border-red-500">
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-600">বাতিল</button>
+                <button onclick="confirmModal()" class="flex-1 bg-red-600 px-4 py-2 rounded-lg hover:bg-red-700">নিশ্চিত</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPath = '';
+        let modalCallback = null;
+        let selectedFile = null;
+
+        // ফাইল লোড করা
+        async function loadFiles() {
+            try {
+                const response = await fetch('/api/files');
+                const files = await response.json();
+                displayFiles(files);
+                updateStats(files);
+            } catch (error) {
+                showNotification('ফাইল লোড করতে ব্যর্থ!', 'error');
+            }
+        }
+
+        // ফাইল ডিসপ্লে করা
+        function displayFiles(files) {
+            const container = document.getElementById('fileTree');
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            
+            let filteredFiles = files;
+            if(searchTerm) {
+                filteredFiles = files.filter(f => f.name.toLowerCase().includes(searchTerm));
+            }
+            
+            if(filteredFiles.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                        <p>কোন ফাইল পাওয়া যায়নি</p>
+                        <p class="text-sm mt-2">ZIP ফাইল আপলোড করুন অথবা নতুন ফাইল তৈরি করুন</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // ফোল্ডার এবং ফাইল আলাদা করা
+            const folders = filteredFiles.filter(f => f.type === 'folder');
+            const filesList = filteredFiles.filter(f => f.type === 'file');
+            
+            let html = '';
+            
+            // ফোল্ডার দেখানো
+            if(folders.length > 0) {
+                html += `<div class="mb-4"><h4 class="text-sm font-semibold text-yellow-500 mb-2"><i class="fas fa-folder"></i> ফোল্ডার</h4>`;
+                folders.forEach(folder => {
+                    html += generateFileHTML(folder);
+                });
+                html += `</div>`;
+            }
+            
+            // ফাইল দেখানো
+            if(filesList.length > 0) {
+                html += `<div><h4 class="text-sm font-semibold text-blue-500 mb-2"><i class="fas fa-file"></i> ফাইল</h4>`;
+                filesList.forEach(file => {
+                    html += generateFileHTML(file);
+                });
+                html += `</div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function generateFileHTML(file) {
+            const isPython = file.name.endsWith('.py');
+            const icon = file.type === 'folder' ? 'fa-folder' : (isPython ? 'fa-python' : 'fa-file-code');
+            const iconColor = file.type === 'folder' ? 'text-yellow-500' : (isPython ? 'text-green-500' : 'text-blue-500');
+            const sizeText = file.type === 'file' ? formatFileSize(file.size) : '';
+            
+            return `
+                <div class="file-item bg-gray-800 bg-opacity-30 rounded-lg p-3 flex justify-between items-center flex-wrap gap-3">
+                    <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="openFile('${file.name}')">
+                        <i class="fas ${icon} ${iconColor} text-xl"></i>
+                        <div>
+                            <div class="font-medium">${escapeHtml(file.name)}</div>
+                            ${sizeText ? `<div class="text-xs text-gray-500">${sizeText}</div>` : ''}
+                        </div>
+                        ${isPython ? '<span class="bg-green-600 text-xs px-2 py-1 rounded">Python</span>' : ''}
+                    </div>
+                    <div class="flex gap-2">
+                        ${file.type === 'file' ? `
+                            <button onclick="editFile('${file.name}')" class="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700 text-sm">
+                                <i class="fas fa-edit"></i> এডিট
+                            </button>
+                        ` : ''}
+                        <button onclick="deleteFile('${file.name}')" class="bg-red-600 px-3 py-1 rounded hover:bg-red-700 text-sm">
+                            <i class="fas fa-trash"></i> ডিলিট
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ফাইল এডিট করা
+        async function editFile(filename) {
+            try {
+                const response = await fetch('/api/file-content', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({filename})
+                });
+                const data = await response.json();
+                
+                if(data.content !== undefined) {
+                    showEditor(filename, data.content);
+                }
+            } catch (error) {
+                showNotification('ফাইল খুলতে ব্যর্থ!', 'error');
+            }
+        }
+        
+        function showEditor(filename, content) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-90 backdrop-blur-md z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="glass-card rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                    <div class="flex justify-between items-center p-4 border-b border-red-500">
+                        <h3 class="text-xl font-bold"><i class="fas fa-code"></i> এডিট: ${escapeHtml(filename)}</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                    </div>
+                    <textarea id="editorContent" class="flex-1 p-4 code-editor text-white text-sm focus:outline-none" style="min-height: 400px; font-family: monospace;">${escapeHtml(content)}</textarea>
+                    <div class="flex gap-3 p-4 border-t border-gray-700">
+                        <button onclick="saveFileContent('${filename}')" class="flex-1 bg-green-600 px-6 py-2 rounded-lg hover:bg-green-700">
+                            <i class="fas fa-save"></i> সেভ করুন
+                        </button>
+                        <button onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-700 px-6 py-2 rounded-lg hover:bg-gray-600">
+                            <i class="fas fa-times"></i> বাতিল
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        async function saveFileContent(filename) {
+            const editor = document.getElementById('editorContent');
+            const content = editor.value;
+            
+            try {
+                const response = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({filename, content})
+                });
+                const data = await response.json();
+                
+                if(data.success) {
+                    showNotification(`"${filename}" সেভ করা হয়েছে!`, 'success');
+                    document.querySelector('.fixed')?.remove();
+                    loadFiles();
+                } else {
+                    showNotification('সেভ করতে ব্যর্থ!', 'error');
+                }
+            } catch (error) {
+                showNotification('সেভ করতে ব্যর্থ!', 'error');
+            }
+        }
+        
+        function openFile(filename) {
+            if(filename.endsWith('.py')) {
+                editFile(filename);
+            } else if(filename.endsWith('.txt') || filename.endsWith('.json') || filename.endsWith('.html') || filename.endsWith('.css') || filename.endsWith('.js')) {
+                editFile(filename);
+            } else {
+                showNotification('এই ফাইলটি প্রিভিউ করা যাবে না', 'warning');
+            }
+        }
+        
+        async function deleteFile(filename) {
+            if(confirm(`"${filename}" ডিলিট করতে চান?`)) {
+                try {
+                    const response = await fetch('/api/delete', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({filename})
+                    });
+                    const data = await response.json();
+                    
+                    if(data.success) {
+                        showNotification(`"${filename}" ডিলিট করা হয়েছে`, 'success');
+                        loadFiles();
+                    }
+                } catch (error) {
+                    showNotification('ডিলিট করতে ব্যর্থ!', 'error');
+                }
+            }
+        }
+        
+        // ফাইল আপলোড
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+        uploadArea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files);
+            await uploadFiles(files);
+        });
+        
+        fileInput.addEventListener('change', async (e) => {
+            await uploadFiles(Array.from(e.target.files));
+            fileInput.value = '';
+        });
+        
+        async function uploadFiles(files) {
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            progressDiv.classList.remove('hidden');
+            
+            for(let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const percent = ((i + 1) / files.length) * 100;
+                progressBar.style.width = `${percent}%`;
+                progressText.textContent = `আপলোড হচ্ছে: ${file.name} (${i+1}/${files.length})`;
+                
+                try {
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    
+                    if(data.success) {
+                        showNotification(`${file.name} আপলোড সম্পন্ন!`, 'success');
+                    }
+                } catch (error) {
+                    showNotification(`${file.name} আপলোড ব্যর্থ!`, 'error');
+                }
+            }
+            
+            setTimeout(() => {
+                progressDiv.classList.add('hidden');
+                progressBar.style.width = '0%';
+            }, 1000);
+            
+            loadFiles();
+        }
+        
+        function createNewFile() {
+            showModal('নতুন ফাইলের নাম', async (name) => {
+                if(name && !name.endsWith('.py')) name += '.py';
+                if(name) {
+                    await saveFileContent(name, '# আপনার কোড এখানে লিখুন\nprint("Hello World!")\n');
+                }
+            });
+        }
+        
+        function createNewFolder() {
+            showModal('নতুন ফোল্ডারের নাম', async (name) => {
+                if(name) {
+                    // ফোল্ডার তৈরি করার জন্য একটি ডামি ফাইল আপলোড
+                    const formData = new FormData();
+                    const blob = new Blob([''], {type: 'text/plain'});
+                    const file = new File([blob], `${name}/.keep`, {type: 'text/plain'});
+                    formData.append('file', file);
+                    
+                    await fetch('/api/upload', {method: 'POST', body: formData});
+                    loadFiles();
+                    showNotification(`ফোল্ডার "${name}" তৈরি করা হয়েছে`, 'success');
+                }
+            });
+        }
+        
+        function showModal(title, callback) {
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalInput = document.getElementById('modalInput');
+            
+            modalTitle.textContent = title;
+            modalInput.value = '';
+            modalCallback = callback;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            modalCallback = null;
+        }
+        
+        function confirmModal() {
+            const input = document.getElementById('modalInput').value;
+            if(modalCallback && input) {
+                modalCallback(input);
+            }
+            closeModal();
+        }
+        
+        function updateStats(files) {
+            const totalFiles = files.filter(f => f.type === 'file').length;
+            const pythonFiles = files.filter(f => f.type === 'file' && f.name.endsWith('.py')).length;
+            const totalFolders = files.filter(f => f.type === 'folder').length;
+            
+            document.getElementById('totalFiles').textContent = totalFiles;
+            document.getElementById('pythonFiles').textContent = pythonFiles;
+            document.getElementById('totalFolders').textContent = totalFolders;
+        }
+        
+        function refreshFiles() {
+            loadFiles();
+            showNotification('ফাইল রিফ্রেশ করা হয়েছে', 'success');
+        }
+        
+        function formatFileSize(bytes) {
+            if(bytes < 1024) return bytes + ' B';
+            if(bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / 1048576).toFixed(2) + ' MB';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const colors = {success: '#00cc44', error: '#ff4444', warning: '#ffaa00', info: '#4d4dff'};
+            notification.className = 'fixed bottom-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg animate-bounce';
+            notification.style.backgroundColor = colors[type];
+            notification.style.color = 'white';
+            notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'} mr-2"></i>${message}`;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+        
+        // সার্চ ইভেন্ট
+        document.getElementById('searchInput')?.addEventListener('input', () => loadFiles());
+        
+        // পেজ লোড
+        loadFiles();
+    </script>
+</body>
+</html>
