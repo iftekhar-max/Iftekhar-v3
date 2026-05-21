@@ -199,6 +199,8 @@ def run_code():
         process_id = str(uuid.uuid4())[:8]
         
         def run_script():
+            username = session.get('username')
+            user_folder = os.path.join(UPLOAD_FOLDER, username)
             process = subprocess.Popen(
                 [sys.executable, filename],
                 stdout=subprocess.PIPE,
