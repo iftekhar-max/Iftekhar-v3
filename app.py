@@ -227,7 +227,7 @@ def run_code():
         if username in running_processes:
             del running_processes[username]
         
-        thread = threading.Thread(target=run_script, args=(username,)
+        thread = threading.Thread(target=run_script, args=(username,)}
         thread.start()
         
         return jsonify({'success': True, 'process_id': process_id, 'message': 'Code running...'})
