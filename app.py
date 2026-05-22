@@ -224,7 +224,7 @@ def run_code():
             'process_id': process_id
         })
             
-             if username in running_processes:
+        if username in running_processes:
             del running_processes[username]
         
         thread = threading.Thread(target=run_script, args=(username,)
