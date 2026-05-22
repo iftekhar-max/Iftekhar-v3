@@ -222,7 +222,7 @@ def run_code():
                 'user': username,
                 'result': result,
                 'process_id': process_id
-            })
+            }()
             
             if username in running_processes:
                 del running_processes[username]
