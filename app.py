@@ -219,13 +219,13 @@ def run_code():
             }
             
             socketio.emit('run_result', {
-                'user': username,
-                'result': result,
-                'process_id': process_id
+            'user': username,
+            'result': result,
+            'process_id': process_id
         })
             
-            if username in running_processes:
-                del running_processes[username]
+             if username in running_processes:
+             del running_processes[username]
         
         thread = threading.Thread(target=run_script, args=(username,)
         thread.start()
