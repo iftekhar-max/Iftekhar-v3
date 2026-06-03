@@ -16,3 +16,6 @@ cryptography==41.0.7
 python-dateutil==2.8.2
 pyarmor==8.5.12
 pyarmor.cli.core.linux
+google-api-python-client>=2.0.0
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
