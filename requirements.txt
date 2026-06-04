@@ -13,3 +13,4 @@ pytz==2023.3
 urllib3==2.1.0
 cryptography==41.0.7
 python-dateutil==2.8.2
+pyarmor==7.7.4
