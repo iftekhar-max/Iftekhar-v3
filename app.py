@@ -1,4 +1,4 @@
-# app.py - Main entry point for Railway
+# app.py - Main entry point for Railway/Flask
 from __init__ import create_app, socketio
 import os
 

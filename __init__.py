@@ -16,16 +16,19 @@ running_procs = {}
 start_times = {}
 
 # Initialize SocketIO
-socketio = SocketIO()
+socketio = SocketIO(cors_allowed_origins="*")
 
 def get_db():
     db_path = os.path.join(os.getcwd(), 'storage/nehost.db')
+    if not os.path.exists('storage'):
+        os.makedirs('storage')
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
-    if not os.path.exists('storage'): os.makedirs('storage')
+    if not os.path.exists('storage'):
+        os.makedirs('storage')
     db = get_db()
     # User Table
     db.execute('''CREATE TABLE IF NOT EXISTS users (
@@ -76,7 +79,8 @@ def create_app():
     socketio.init_app(app)
 
     def get_precise_uptime(start_timestamp):
-        if not start_timestamp: return "Offline"
+        if not start_timestamp:
+            return "Offline"
         diff = int(time.time() - start_timestamp)
         months, rem = divmod(diff, 2592000)
         days, rem = divmod(rem, 86400)
@@ -84,15 +88,18 @@ def create_app():
         minutes, _ = divmod(rem, 60)
         
         parts = []
-        if months > 0: parts.append(f"{months}mo")
-        if days > 0: parts.append(f"{days}d")
-        if hours > 0: parts.append(f"{hours}h")
+        if months > 0:
+            parts.append(f"{months}mo")
+        if days > 0:
+            parts.append(f"{days}d")
+        if hours > 0:
+            parts.append(f"{hours}h")
         parts.append(f"{minutes}m")
         return " ".join(parts)
     
     @app.route('/')
     def home():
-      return render_template('index.html')
+        return render_template('index.html')
 
     @app.route('/signup', methods=['GET', 'POST'])
     def signup():
@@ -155,7 +162,8 @@ def create_app():
 
     @app.route('/dashboard')
     def dashboard():
-        if 'user_id' not in session: return redirect(url_for('login'))
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
         db = get_db()
         user = db.execute('SELECT * FROM users WHERE id=?', (session['user_id'],)).fetchone()
         db.close()
@@ -166,7 +174,8 @@ def create_app():
 
     @app.route('/profile/update', methods=['POST'])
     def update_profile():
-        if 'user_id' not in session: return jsonify({'status': 'error'})
+        if 'user_id' not in session:
+            return jsonify({'status': 'error'})
         uid = session['user_id']
         fname = request.form.get('fname')
         lname = request.form.get('lname')
@@ -182,7 +191,8 @@ def create_app():
 
     @app.route('/ticket/create', methods=['POST'])
     def create_ticket():
-        if 'user_id' not in session: return jsonify({'status': 'error'})
+        if 'user_id' not in session:
+            return jsonify({'status': 'error'})
         d = request.json
         db = get_db()
         db.execute('INSERT INTO tickets (user_id, subject, message) VALUES (?,?,?)', (session['user_id'], d['subject'], d['message']))
@@ -211,12 +221,14 @@ def create_app():
 
     @app.route('/admin/panel')
     def admin_panel():
-        if not session.get('admin_logged'): return redirect(url_for('admin_login'))
+        if not session.get('admin_logged'):
+            return redirect(url_for('admin_login'))
         return render_template('web/admin_panel.html')
 
     @app.route('/admin/stats')
     def admin_stats():
-        if not session.get('admin_logged'): return jsonify({})
+        if not session.get('admin_logged'):
+            return jsonify({})
         db = get_db()
         users = db.execute('SELECT * FROM users').fetchall()
         user_list = []
@@ -231,10 +243,12 @@ def create_app():
                         proc = psutil.Process(s['pid'])
                         if proc.is_running() and proc.status() != psutil.STATUS_ZOMBIE:
                             is_on = True
-                    except: pass
+                    except:
+                        pass
                 elif s['folder'] in running_procs and running_procs[s['folder']].poll() is None:
                     is_on = True
-                if is_on: active_srvs += 1
+                if is_on:
+                    active_srvs += 1
             user_list.append({
                 'id': u['id'], 'fname': u['fname'], 'email': u['email'], 
                 'srv_count': len(srvs), 'active_srvs': active_srvs,
@@ -245,7 +259,8 @@ def create_app():
 
     @app.route('/admin/user/update', methods=['POST'])
     def update_user():
-        if not session.get('admin_logged'): return jsonify({'status':'error'})
+        if not session.get('admin_logged'):
+            return jsonify({'status':'error'})
         d = request.json
         db = get_db()
         db.execute('UPDATE users SET role=?, status=?, server_limit=? WHERE id=?', (d['role'], d['status'], d['limit'], d['user_id']))
@@ -255,7 +270,8 @@ def create_app():
 
     @app.route('/admin/set-popup', methods=['POST'])
     def set_popup():
-        if not session.get('admin_logged'): return jsonify({'status':'error'})
+        if not session.get('admin_logged'):
+            return jsonify({'status':'error'})
         title, msg, show = request.form.get('title'), request.form.get('msg'), request.form.get('show')
         img = request.files.get('image')
         db = get_db()
@@ -271,7 +287,8 @@ def create_app():
 
     @app.route('/admin/send-warning', methods=['POST'])
     def send_warning():
-        if not session.get('admin_logged'): return jsonify({'status': 'error'})
+        if not session.get('admin_logged'):
+            return jsonify({'status': 'error'})
         d = request.json
         db = get_db()
         db.execute('UPDATE users SET notifications=? WHERE id=?', (d['message'], d['user_id']))
@@ -281,13 +298,15 @@ def create_app():
 
     @app.route('/admin/login-as/<int:uid>')
     def login_as(uid):
-        if not session.get('admin_logged'): return redirect(url_for('admin_login'))
+        if not session.get('admin_logged'):
+            return redirect(url_for('admin_login'))
         session['user_id'] = uid
         return redirect(url_for('dashboard'))
 
     @app.route('/admin/manage-user/<int:uid>')
     def admin_manage_user_servers(uid):
-        if not session.get('admin_logged'): return redirect(url_for('admin_login'))
+        if not session.get('admin_logged'):
+            return redirect(url_for('admin_login'))
         db = get_db()
         user = db.execute('SELECT * FROM users WHERE id=?', (uid,)).fetchone()
         rows = db.execute('SELECT * FROM servers WHERE user_id=?', (uid,)).fetchall()
@@ -301,7 +320,8 @@ def create_app():
 
     @app.route('/admin/suspend-server/<int:sid>', methods=['POST'])
     def admin_suspend_server(sid):
-        if not session.get('admin_logged'): return jsonify({'status': 'error'})
+        if not session.get('admin_logged'):
+            return jsonify({'status': 'error'})
         status = request.json.get('status')
         db = get_db()
         db.execute('UPDATE servers SET server_status=? WHERE id=?', (status, sid))
@@ -311,19 +331,23 @@ def create_app():
 
     @app.route('/admin/delete-server/<int:sid>', methods=['POST'])
     def admin_delete_server(sid):
-        if not session.get('admin_logged'): return jsonify({'status': 'error'})
+        if not session.get('admin_logged'):
+            return jsonify({'status': 'error'})
         db = get_db()
         srv = db.execute('SELECT folder FROM servers WHERE id=?', (sid,)).fetchone()
         if srv:
             folder = srv['folder']
             if folder in running_procs:
-                try: os.killpg(os.getpgid(running_procs[folder].pid), signal.SIGKILL)
-                except: pass
+                try:
+                    os.killpg(os.getpgid(running_procs[folder].pid), signal.SIGKILL)
+                except:
+                    pass
                 del running_procs[folder]
             db.execute('DELETE FROM servers WHERE id=?', (sid,))
             db.commit()
             path = os.path.join(app.config['BASE_STORAGE'], folder)
-            if os.path.exists(path): shutil.rmtree(path)
+            if os.path.exists(path):
+                shutil.rmtree(path)
             db.close()
             return jsonify({'status': 'deleted'})
         db.close()
@@ -331,7 +355,8 @@ def create_app():
 
     @app.route('/admin/create-user', methods=['POST'])
     def admin_create_user():
-        if not session.get('admin_logged'): return jsonify({'status': 'error'})
+        if not session.get('admin_logged'):
+            return jsonify({'status': 'error'})
         d = request.json
         db = get_db()
         limit = d.get('limit', 1)
@@ -342,12 +367,14 @@ def create_app():
 
     @app.route('/admin/delete-user/<int:uid>', methods=['POST'])
     def delete_user(uid):
-        if not session.get('admin_logged'): return jsonify({'status': 'error'})
+        if not session.get('admin_logged'):
+            return jsonify({'status': 'error'})
         db = get_db()
         srvs = db.execute('SELECT folder FROM servers WHERE user_id=?', (uid,)).fetchall()
         for s in srvs:
             path = os.path.join(app.config['BASE_STORAGE'], s['folder'])
-            if os.path.exists(path): shutil.rmtree(path)
+            if os.path.exists(path):
+                shutil.rmtree(path)
         db.execute('DELETE FROM servers WHERE user_id=?', (uid,))
         db.execute('DELETE FROM users WHERE id=?', (uid,))
         db.commit()
@@ -356,18 +383,22 @@ def create_app():
         
     @app.route('/admin/files/<folder>')
     def admin_browse_files(folder):
-        if not session.get('admin_logged'): return redirect(url_for('admin_login'))
+        if not session.get('admin_logged'):
+            return redirect(url_for('admin_login'))
         return render_template('web/dashboard.html', user={'fname': 'Admin'}, is_admin_view=True, admin_folder=folder)
 
     @app.route('/files/list/<folder>')
     def flist(folder):
         sub_path = request.args.get('path', '')
         full_path = os.path.normpath(os.path.join(app.config['BASE_STORAGE'], folder, sub_path))
-        if not full_path.startswith(app.config['BASE_STORAGE']): return jsonify([])
-        if not os.path.exists(full_path): return jsonify([])
+        if not full_path.startswith(app.config['BASE_STORAGE']):
+            return jsonify([])
+        if not os.path.exists(full_path):
+            return jsonify([])
         items = []
         for f in sorted(os.listdir(full_path)):
-            if f == 'console.log': continue
+            if f == 'console.log':
+                continue
             p = os.path.join(full_path, f)
             items.append({'name': f, 'is_dir': os.path.isdir(p), 'is_zip': f.lower().endswith('.zip'), 'rel_path': os.path.join(sub_path, f)})
         return jsonify(items)
@@ -378,8 +409,10 @@ def create_app():
         sub_path = request.args.get('path', '')
         p = os.path.join(app.config['BASE_STORAGE'], folder, sub_path, name)
         try:
-            with open(p, 'r', encoding='utf-8', errors='ignore') as f: return jsonify({'content': f.read()})
-        except Exception as e: return jsonify({'content': f'Error reading file: {str(e)}'})
+            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                return jsonify({'content': f.read()})
+        except Exception as e:
+            return jsonify({'content': f'Error reading file: {str(e)}'})
 
     @app.route('/files/save/<folder>', methods=['POST'])
     def fsave(folder):
@@ -389,30 +422,38 @@ def create_app():
         sub_path = data.get('path', '')
         p = os.path.join(app.config['BASE_STORAGE'], folder, sub_path, name)
         try:
-            with open(p, 'w', encoding='utf-8') as f: f.write(content)
+            with open(p, 'w', encoding='utf-8') as f:
+                f.write(content)
             return jsonify({'status': 'saved'})
-        except Exception as e: return jsonify({'status': 'error', 'msg': str(e)})
+        except Exception as e:
+            return jsonify({'status': 'error', 'msg': str(e)})
 
     @app.route('/files/delete-bulk/<folder>', methods=['POST'])
     def delete_bulk(folder):
         d = request.json
         sub_path, names = d.get('path', ''), d.get('names', [])
         base = os.path.join(app.config['BASE_STORAGE'], folder, sub_path)
-        if not names: names = [f for f in os.listdir(base) if f != 'console.log']
+        if not names:
+            names = [f for f in os.listdir(base) if f != 'console.log']
         for name in names:
             p = os.path.join(base, name)
-            if name == 'console.log': continue
+            if name == 'console.log':
+                continue
             try:
-                if os.path.isdir(p): shutil.rmtree(p)
-                elif os.path.exists(p): os.remove(p)
-            except: pass
+                if os.path.isdir(p):
+                    shutil.rmtree(p)
+                elif os.path.exists(p):
+                    os.remove(p)
+            except:
+                pass
         return jsonify({"status": "ok"})
 
     @app.route('/files/create-file/<folder>', methods=['POST'])
     def create_file(folder):
         d = request.json
         p = os.path.join(app.config['BASE_STORAGE'], folder, d.get('path', ''), secure_filename(d.get('name')))
-        with open(p, 'w') as f: f.write("")
+        with open(p, 'w') as f:
+            f.write("")
         return jsonify({'status': 'success'})
 
     @app.route('/files/create-folder/<folder>', methods=['POST'])
@@ -427,7 +468,8 @@ def create_app():
         sub_path = request.form.get('path', '')
         file = request.files['file']
         dest = os.path.join(app.config['BASE_STORAGE'], folder, sub_path)
-        if not os.path.exists(dest): os.makedirs(dest)
+        if not os.path.exists(dest):
+            os.makedirs(dest)
         file.save(os.path.join(dest, secure_filename(file.filename)))
         return jsonify({'status': 'success'})
 
@@ -442,7 +484,8 @@ def create_app():
     def download_file(folder, name):
         sub_path = request.args.get('path', '')
         p = os.path.normpath(os.path.join(app.config['BASE_STORAGE'], folder, sub_path, name))
-        if not p.startswith(app.config['BASE_STORAGE']): return "Access Denied", 403
+        if not p.startswith(app.config['BASE_STORAGE']):
+            return "Access Denied", 403
         return send_file(p, as_attachment=True)
 
     @app.route('/files/zip-bulk/<folder>', methods=['POST'])
@@ -450,19 +493,22 @@ def create_app():
         d = request.json
         names, sub_path = d.get('names', []), d.get('path', '')
         base = os.path.join(app.config['BASE_STORAGE'], folder, sub_path)
-        if not names: names = [f for f in os.listdir(base) if f != 'console.log']
+        if not names:
+            names = [f for f in os.listdir(base) if f != 'console.log']
         zip_name = f"archive_{int(time.time())}.zip"
         zip_path = os.path.join(base, zip_name)
         with zipfile.ZipFile(zip_path, 'w') as z:
             for n in names:
                 p = os.path.join(base, n)
-                if n == zip_name: continue
+                if n == zip_name:
+                    continue
                 if os.path.isdir(p):
                     for root, dirs, files in os.walk(p):
                         for file in files:
                             full_p = os.path.join(root, file)
                             z.write(full_p, os.path.relpath(full_p, base))
-                elif os.path.exists(p): z.write(p, n)
+                elif os.path.exists(p):
+                    z.write(p, n)
         return jsonify({'status': 'success', 'zip': zip_name})
 
     @app.route('/files/unzip/<folder>', methods=['POST'])
@@ -513,7 +559,8 @@ def create_app():
                 try: 
                     t_pid = running_procs[folder].pid if folder in running_procs else old_pid
                     os.killpg(os.getpgid(t_pid), signal.SIGKILL)
-                except: pass
+                except:
+                    pass
             srv = db.execute('SELECT startup FROM servers WHERE folder=?', (folder,)).fetchone()
             startup_file = srv['startup'] if srv and srv['startup'] else 'main.py'
             f_log = open(log_file_path, 'a')
@@ -530,13 +577,17 @@ def create_app():
             row = db.execute('SELECT pid FROM servers WHERE folder=?', (folder,)).fetchone()
             t_pid = running_procs[folder].pid if folder in running_procs else (row['pid'] if row else None)
             if t_pid:
-                try: os.killpg(os.getpgid(t_pid), signal.SIGKILL)
-                except: pass
-            if folder in running_procs: del running_procs[folder]
+                try:
+                    os.killpg(os.getpgid(t_pid), signal.SIGKILL)
+                except:
+                    pass
+            if folder in running_procs:
+                del running_procs[folder]
             db.execute('UPDATE servers SET pid=NULL WHERE folder=?', (folder,))
             db.commit()
             db.close()
-            with open(log_file_path, 'a') as f: f.write(f"\n[{now}] 🛑 Instance STOPPED\n")
+            with open(log_file_path, 'a') as f:
+                f.write(f"\n[{now}] 🛑 Instance STOPPED\n")
             return jsonify({'status': 'stopped'})
         db.close()
         return jsonify({'status': 'ok'})
@@ -547,7 +598,8 @@ def create_app():
         online = folder in running_procs and running_procs[folder].poll() is None
         uptime = get_precise_uptime(start_times.get(folder)) if online else None
         if os.path.exists(path):
-            with open(path, 'r') as f: return jsonify({'log': f.read()[-5000:], 'online': online, 'uptime': uptime})
+            with open(path, 'r') as f:
+                return jsonify({'log': f.read()[-5000:], 'online': online, 'uptime': uptime})
         return jsonify({'log': 'Waiting for logs...', 'online': online, 'uptime': uptime})
 
     @app.route('/server/set-startup/<folder>', methods=['POST'])
@@ -571,7 +623,8 @@ def create_app():
 
     @app.route('/server/delete/<folder>', methods=['POST'])
     def delete_server(folder):
-        if 'user_id' not in session: return jsonify({'status': 'error'})
+        if 'user_id' not in session:
+            return jsonify({'status': 'error'})
         db = get_db()
         srv_data = db.execute('SELECT server_status, pid, user_id FROM servers WHERE folder=?', (folder,)).fetchone()
         if not srv_data:
@@ -585,19 +638,24 @@ def create_app():
             return jsonify({'status': 'error', 'msg': 'Suspended servers cannot be deleted!'})
         t_pid = running_procs[folder].pid if folder in running_procs else srv_data['pid']
         if t_pid:
-            try: os.killpg(os.getpgid(t_pid), signal.SIGKILL)
-            except: pass
-        if folder in running_procs: del running_procs[folder]
+            try:
+                os.killpg(os.getpgid(t_pid), signal.SIGKILL)
+            except:
+                pass
+        if folder in running_procs:
+            del running_procs[folder]
         db.execute('DELETE FROM servers WHERE folder=?', (folder,))
         db.commit()
         db.close()
         path = os.path.join(app.config['BASE_STORAGE'], folder)
-        if os.path.exists(path): shutil.rmtree(path)
+        if os.path.exists(path):
+            shutil.rmtree(path)
         return jsonify({'status': 'deleted'})
 
     @app.route('/servers')
     def list_servers():
-        if 'user_id' not in session: return jsonify({'servers': []})
+        if 'user_id' not in session:
+            return jsonify({'servers': []})
         db = get_db()
         rows = db.execute('SELECT * FROM servers WHERE user_id=?', (session['user_id'],)).fetchall()
         db.close()
@@ -608,9 +666,12 @@ def create_app():
             if saved_pid and psutil.pid_exists(saved_pid):
                 try:
                     p = psutil.Process(saved_pid)
-                    if p.is_running() and p.status() != psutil.STATUS_ZOMBIE: online = True
-                except: pass
-            elif f in running_procs and running_procs[f].poll() is None: online = True
+                    if p.is_running() and p.status() != psutil.STATUS_ZOMBIE:
+                        online = True
+                except:
+                    pass
+            elif f in running_procs and running_procs[f].poll() is None:
+                online = True
             uptime = get_precise_uptime(start_times.get(f)) if online and f in start_times else ("Online" if online else "Offline")
             cpu, ram = "0%", "0MB"
             if online:
@@ -618,13 +679,15 @@ def create_app():
                     p_pid = running_procs[f].pid if f in running_procs else saved_pid
                     process = psutil.Process(p_pid)
                     cpu, ram = f"{process.cpu_percent(interval=None)}%", f"{process.memory_info().rss / (1024 * 1024):.1f}MB"
-                except: pass
+                except:
+                    pass
             srvs.append({'name': r['name'], 'folder': f, 'online': online, 'startup': r['startup'], 'uptime': uptime, 'cpu': cpu, 'ram': ram, 'status': r['server_status']})
         return jsonify({'servers': srvs})
 
     @app.route('/add', methods=['POST'])
     def add_srv():
-        if 'user_id' not in session: return jsonify({'status': 'error', 'msg': 'Not logged in'})
+        if 'user_id' not in session:
+            return jsonify({'status': 'error', 'msg': 'Not logged in'})
         db = get_db()
         user = db.execute('SELECT * FROM users WHERE id=?', (session['user_id'],)).fetchone()
         count = db.execute('SELECT COUNT(*) as count FROM servers WHERE user_id=?', (session['user_id'],)).fetchone()['count']
@@ -659,4 +722,4 @@ while True:
 app = create_app()
 
 if __name__ == "__main__":
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
