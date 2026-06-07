@@ -5,3 +5,14 @@ eventlet==0.33.3
 werkzeug==2.3.7
 psutil==5.9.5
 gunicorn==21.2.0
+requests
+httpx
+google
+protobuf
+pycryptodome
+PyJWT
+urllib3
+protobuf-decoder
+pytz
+aiohttp
+cfonts
